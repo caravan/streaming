@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/caravan/streaming)](https://goreportcard.com/report/github.com/caravan/streaming) [![Build Status](https://travis-ci.org/caravan/streaming.svg?branch=main)](https://travis-ci.org/caravan/streaming) [![Test Coverage](https://api.codeclimate.com/v1/badges/765ab190b974830efb4d/test_coverage)](https://codeclimate.com/github/caravan/streaming/test_coverage) [![Maintainability](https://api.codeclimate.com/v1/badges/765ab190b974830efb4d/maintainability)](https://codeclimate.com/github/caravan/streaming/maintainability) [![GitHub](https://img.shields.io/github/license/caravan/streaming)](https://github.com/caravan/streaming/blob/main/LICENSE.md)
  
-Caravan is a set of in-process event streaming tools for [Go](https://golang.org/) applications. Think ["Kafka"](https://kafka.apache.org), but for the internal workings of your software. Caravan Streaming includes basic features for building Event Streams.
+Caravan is a set of in-process event streaming tools for [Go](https://golang.org/) applications. Think ["Kafka"](https://kafka.apache.org), but for the internal workings of your software. Caravan Streaming includes basic features for building Event Streams and Tables.
 
 _This is a work in progress. The basics are there, but not yet ready for production use. Use at your own risk_
 
