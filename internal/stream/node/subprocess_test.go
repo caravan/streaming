@@ -7,6 +7,7 @@ import (
 
 	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/stream/reporter"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
@@ -53,7 +54,7 @@ func TestSubprocess(t *testing.T) {
 		node.TopicSink(outTopic),
 	)
 
-	s := caravan.NewStream(sub)
+	s := streaming.NewStream(sub)
 	s.Start()
 
 	p := inTopic.NewProducer()
@@ -79,7 +80,7 @@ func TestStatefulSubprocess(t *testing.T) {
 		node.TopicSink(outTopic),
 	).(stream.StatefulProcessor)
 
-	s := caravan.NewStream(sub)
+	s := streaming.NewStream(sub)
 	s.Start()
 
 	p := inTopic.NewProducer()

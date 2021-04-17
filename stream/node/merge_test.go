@@ -6,6 +6,7 @@ import (
 
 	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func TestMerge(t *testing.T) {
 
 	inTopic := caravan.NewTopic()
 	outTopic := caravan.NewTopic()
-	s := caravan.NewStream(
+	s := streaming.NewStream(
 		node.TopicSource(inTopic),
 		node.Merge(add1, times2),
 		node.TopicSink(outTopic),

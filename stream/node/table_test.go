@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/id"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/stream/reporter"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/caravan/streaming/table"
@@ -21,7 +21,7 @@ func TestTableLookup(t *testing.T) {
 	as := assert.New(t)
 
 	theID := id.New()
-	tbl := caravan.NewTable(
+	tbl := streaming.NewTable(
 		func(_ topic.Event) (table.Key, error) {
 			return theID, nil
 		},
@@ -54,7 +54,7 @@ func TestTableLookup(t *testing.T) {
 func TestLookupCreateError(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := caravan.NewTable(nil)
+	tbl := streaming.NewTable(nil)
 	lookup, err := node.TableLookup(tbl, "missing",
 		func(_ topic.Event) (table.Key, error) {
 			return id.Nil, nil
@@ -68,7 +68,7 @@ func TestLookupProcessError(t *testing.T) {
 	as := assert.New(t)
 
 	theKey := id.New()
-	tbl := caravan.NewTable(
+	tbl := streaming.NewTable(
 		func(_ topic.Event) (table.Key, error) {
 			return theKey, nil
 		},
@@ -115,7 +115,7 @@ func TestTableSink(t *testing.T) {
 func TestTableSinkError(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := caravan.NewTable(func(e topic.Event) (table.Key, error) {
+	tbl := streaming.NewTable(func(e topic.Event) (table.Key, error) {
 		return id.Nil, errors.New("key error")
 	})
 

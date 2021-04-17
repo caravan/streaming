@@ -19,7 +19,7 @@ import (
 
     "github.com/caravan/essentials"
     "github.com/caravan/essentials/topic"
-	"github.com/caravan/streaming/stream/build"
+    "github.com/caravan/streaming/stream/build"
 )
 
 func main() {

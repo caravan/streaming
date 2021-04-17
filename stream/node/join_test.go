@@ -7,6 +7,7 @@ import (
 
 	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ func TestJoin(t *testing.T) {
 	leftTopic := caravan.NewTopic()
 	rightTopic := caravan.NewTopic()
 	outTopic := caravan.NewTopic()
-	s := caravan.NewStream(
+	s := streaming.NewStream(
 		node.Join(
 			node.TopicSource(leftTopic),
 			node.TopicSource(rightTopic),
@@ -78,7 +79,7 @@ func TestJoinErrored(t *testing.T) {
 
 	inTopic := caravan.NewTopic()
 	outTopic := caravan.NewTopic()
-	s := caravan.NewStream(
+	s := streaming.NewStream(
 		node.Join(
 			node.TopicSource(inTopic),
 			makeJoinError(errors.New("error")),

@@ -8,6 +8,7 @@ import (
 	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/id"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/build"
 	"github.com/caravan/streaming/table"
@@ -266,7 +267,7 @@ func TestTableSink(t *testing.T) {
 	as := assert.New(t)
 
 	in := caravan.NewTopic()
-	out := caravan.NewTable(
+	out := streaming.NewTable(
 		func(e topic.Event) (table.Key, error) {
 			return e.(*row).id, nil
 		},
@@ -312,7 +313,7 @@ func TestTableLookup(t *testing.T) {
 	}
 
 	in := caravan.NewTopic()
-	tbl := caravan.NewTable(ks,
+	tbl := streaming.NewTable(ks,
 		column.Make("*", func(e topic.Event) (table.Value, error) {
 			return e, nil
 		}),

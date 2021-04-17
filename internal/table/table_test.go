@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/id"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
 	"github.com/stretchr/testify/assert"
@@ -78,7 +78,7 @@ func TestTable(t *testing.T) {
 func TestMissingColumn(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := essentials.NewTable(
+	tbl := streaming.NewTable(
 		func(e topic.Event) (table.Key, error) {
 			return e.(*tableRow).key, nil
 		},
@@ -92,7 +92,7 @@ func TestMissingColumn(t *testing.T) {
 func TestBadSelectors(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := essentials.NewTable(
+	tbl := streaming.NewTable(
 		func(e topic.Event) (table.Key, error) {
 			if e == nil || e.(*tableRow).key == id.Nil {
 				return id.Nil, errors.New("key-error")

@@ -1,5 +1,5 @@
-github.com/antlr/antlr4 v0.0.0-20210404160547-4dfacf63e228 h1:p/DqTaXlmr4c4Q7KyTeAx/wYnBLmaE0YdHzBbMS+D1I=
-github.com/antlr/antlr4 v0.0.0-20210404160547-4dfacf63e228/go.mod h1:T7PbCXFs94rrTttyxjbyT5+/1V8T2TYDejxUfHJjw1Y=
+github.com/caravan/essentials v0.0.0-20210417060909-f11c392f82f6 h1:HV74OlI8EcbPxbt11JtHSeldNEJoz1nAzv+3uhdbi1M=
+github.com/caravan/essentials v0.0.0-20210417060909-f11c392f82f6/go.mod h1:QAo4dzIzq/q3eMj2qZM05hJguZHxDS/E7U6iAEv4hwY=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/uuid v1.2.0 h1:qJYtXnJRWmpe7m/3XlyhrsLrEURqHRM2kxzoxXqyUDs=

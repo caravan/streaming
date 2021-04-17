@@ -5,6 +5,7 @@ import (
 
 	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,7 @@ func TestMap(t *testing.T) {
 
 	inTopic := caravan.NewTopic()
 	outTopic := caravan.NewTopic()
-	s := caravan.NewStream(
+	s := streaming.NewStream(
 		node.TopicSource(inTopic),
 		node.Map(func(e topic.Event) topic.Event {
 			return "Hello, " + e.(string) + "!"

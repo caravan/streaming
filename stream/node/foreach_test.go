@@ -6,6 +6,7 @@ import (
 
 	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestForEach(t *testing.T) {
 
 	sum := 0
 	inTopic := caravan.NewTopic()
-	s := caravan.NewStream(
+	s := streaming.NewStream(
 		node.TopicSource(inTopic),
 		node.ForEach(func(e topic.Event) {
 			sum += e.(int)

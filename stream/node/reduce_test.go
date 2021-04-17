@@ -5,6 +5,7 @@ import (
 
 	caravan "github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func TestReduce(t *testing.T) {
 		node.Reduce(sumReducer),
 		node.TopicSink(outTopic),
 	).(stream.StatefulProcessor)
-	s := caravan.NewStream(sub)
+	s := streaming.NewStream(sub)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
@@ -57,7 +58,7 @@ func TestReduceFrom(t *testing.T) {
 		node.ReduceFrom(sumReducer, 5),
 		node.TopicSink(outTopic),
 	).(stream.StatefulProcessor)
-	s := caravan.NewStream(sub)
+	s := streaming.NewStream(sub)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
