@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/stream/reporter"
@@ -46,8 +46,8 @@ func TestEmptySubprocess(t *testing.T) {
 func TestSubprocess(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 
 	sub := _node.Subprocess(
 		node.TopicSource(inTopic),
@@ -69,8 +69,8 @@ func TestSubprocess(t *testing.T) {
 func TestStatefulSubprocess(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 
 	sub := _node.Subprocess(
 		node.TopicSource(inTopic),

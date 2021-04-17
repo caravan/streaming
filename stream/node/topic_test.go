@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/debug"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream/node"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestTopicSourceSink(t *testing.T) {
-	top := caravan.NewTopic()
+	top := essentials.NewTopic()
 	node.TopicSource(top).Source()
 	node.TopicSink(top).Sink()
 }
@@ -21,7 +21,7 @@ func TestTopicSourceSink(t *testing.T) {
 func TestTopicGC(t *testing.T) {
 	as := assert.New(t)
 
-	top := caravan.NewTopic()
+	top := essentials.NewTopic()
 	node.Subprocess(
 		node.TopicSource(top),
 		node.TopicSink(top),

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/id"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
@@ -18,8 +18,8 @@ import (
 
 func TestPump(t *testing.T) {
 	as := assert.New(t)
-	in := caravan.NewTopic()
-	out := caravan.NewTopic()
+	in := essentials.NewTopic()
+	out := essentials.NewTopic()
 
 	s, err := build.TopicSource(in).TopicSink(out).Stream()
 	as.NotNil(s)
@@ -44,8 +44,8 @@ func TestPump(t *testing.T) {
 
 func TestFilterMapReduce(t *testing.T) {
 	as := assert.New(t)
-	in := caravan.NewTopic()
-	out := caravan.NewTopic()
+	in := essentials.NewTopic()
+	out := essentials.NewTopic()
 
 	s, err := build.
 		TopicSource(in).
@@ -85,8 +85,8 @@ func TestFilterMapReduce(t *testing.T) {
 
 func TestReduceFrom(t *testing.T) {
 	as := assert.New(t)
-	in := caravan.NewTopic()
-	out := caravan.NewTopic()
+	in := essentials.NewTopic()
+	out := essentials.NewTopic()
 
 	s, err := build.
 		TopicSource(in).
@@ -118,8 +118,8 @@ func TestReduceFrom(t *testing.T) {
 
 func TestProcessorFunc(t *testing.T) {
 	as := assert.New(t)
-	in := caravan.NewTopic()
-	out := caravan.NewTopic()
+	in := essentials.NewTopic()
+	out := essentials.NewTopic()
 
 	s, err := build.
 		TopicSource(in).
@@ -150,9 +150,9 @@ func TestProcessorFunc(t *testing.T) {
 func TestMerge(t *testing.T) {
 	as := assert.New(t)
 
-	l := caravan.NewTopic()
-	r := caravan.NewTopic()
-	out := caravan.NewTopic()
+	l := essentials.NewTopic()
+	r := essentials.NewTopic()
+	out := essentials.NewTopic()
 
 	s, err := build.
 		TopicSource(l).
@@ -200,7 +200,7 @@ func TestMerge(t *testing.T) {
 func TestMergeBuildError(t *testing.T) {
 	as := assert.New(t)
 
-	in := caravan.NewTopic()
+	in := essentials.NewTopic()
 
 	s, err := build.
 		Merge(
@@ -217,9 +217,9 @@ func TestMergeBuildError(t *testing.T) {
 func TestJoin(t *testing.T) {
 	as := assert.New(t)
 
-	l := caravan.NewTopic()
-	r := caravan.NewTopic()
-	out := caravan.NewTopic()
+	l := essentials.NewTopic()
+	r := essentials.NewTopic()
+	out := essentials.NewTopic()
 
 	s, err := build.
 		TopicSource(l).
@@ -266,7 +266,7 @@ type row struct {
 func TestTableSink(t *testing.T) {
 	as := assert.New(t)
 
-	in := caravan.NewTopic()
+	in := essentials.NewTopic()
 	out := streaming.NewTable(
 		func(e topic.Event) (table.Key, error) {
 			return e.(*row).id, nil
@@ -312,7 +312,7 @@ func TestTableLookup(t *testing.T) {
 		return theID, nil
 	}
 
-	in := caravan.NewTopic()
+	in := essentials.NewTopic()
 	tbl := streaming.NewTable(ks,
 		column.Make("*", func(e topic.Event) (table.Value, error) {
 			return e, nil
@@ -321,7 +321,7 @@ func TestTableLookup(t *testing.T) {
 	res, err := tbl.Update("hello there")
 	as.Equal(table.Relation{"hello there"}, res)
 	as.Nil(err)
-	out := caravan.NewTopic()
+	out := essentials.NewTopic()
 
 	s, err := build.
 		TopicSource(in).
@@ -345,8 +345,8 @@ func TestTableLookup(t *testing.T) {
 func TestJoinBuildError(t *testing.T) {
 	as := assert.New(t)
 
-	l := caravan.NewTopic()
-	r := caravan.NewTopic()
+	l := essentials.NewTopic()
+	r := essentials.NewTopic()
 
 	s, err := build.
 		Join(
@@ -370,7 +370,7 @@ func TestJoinBuildError(t *testing.T) {
 func TestDeferredError(t *testing.T) {
 	as := assert.New(t)
 
-	in := caravan.NewTopic()
+	in := essentials.NewTopic()
 	s, err := build.
 		TopicSource(in).
 		Deferred(func() (stream.Processor, error) {

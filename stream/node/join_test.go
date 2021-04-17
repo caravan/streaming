@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
@@ -36,9 +36,9 @@ func TestJoinSource(t *testing.T) {
 func TestJoin(t *testing.T) {
 	as := assert.New(t)
 
-	leftTopic := caravan.NewTopic()
-	rightTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	leftTopic := essentials.NewTopic()
+	rightTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 	s := streaming.NewStream(
 		node.Join(
 			node.TopicSource(leftTopic),
@@ -77,8 +77,8 @@ func TestJoin(t *testing.T) {
 func TestJoinErrored(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 	s := streaming.NewStream(
 		node.Join(
 			node.TopicSource(inTopic),

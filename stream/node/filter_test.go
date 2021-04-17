@@ -3,7 +3,7 @@ package node_test
 import (
 	"testing"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream/node"
@@ -13,8 +13,8 @@ import (
 func TestFilter(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 	s := streaming.NewStream(
 		node.TopicSource(inTopic),
 		node.Filter(func(e topic.Event) bool {

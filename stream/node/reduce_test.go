@@ -3,7 +3,7 @@ package node_test
 import (
 	"testing"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
@@ -18,8 +18,8 @@ func sumReducer(prev topic.Event, e topic.Event) topic.Event {
 func TestReduce(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 
 	sub := node.Subprocess(
 		node.TopicSource(inTopic),
@@ -51,8 +51,8 @@ func TestReduce(t *testing.T) {
 func TestReduceFrom(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 	sub := node.Subprocess(
 		node.TopicSource(inTopic),
 		node.ReduceFrom(sumReducer, 5),

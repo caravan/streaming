@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
@@ -21,7 +21,7 @@ func TestForEach(t *testing.T) {
 	as := assert.New(t)
 
 	sum := 0
-	inTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
 	s := streaming.NewStream(
 		node.TopicSource(inTopic),
 		node.ForEach(func(e topic.Event) {

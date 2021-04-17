@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	caravan "github.com/caravan/essentials"
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
@@ -29,8 +29,8 @@ func TestMerge(t *testing.T) {
 		r.Result(e.(int) * 2)
 	})
 
-	inTopic := caravan.NewTopic()
-	outTopic := caravan.NewTopic()
+	inTopic := essentials.NewTopic()
+	outTopic := essentials.NewTopic()
 	s := streaming.NewStream(
 		node.TopicSource(inTopic),
 		node.Merge(add1, times2),
