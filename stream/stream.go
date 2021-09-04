@@ -13,8 +13,8 @@ type (
 		// current Event has completed
 		Stop() error
 
-		// IsRunning returns whether or not the Stream is processing
-		// Events in the background
+		// IsRunning returns whether the Stream is processing Events in the
+		// background
 		IsRunning() bool
 	}
 
