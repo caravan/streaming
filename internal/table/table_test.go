@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/caravan/essentials/event"
 	"github.com/caravan/essentials/id"
-	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
@@ -25,13 +25,13 @@ func TestTable(t *testing.T) {
 	as := assert.New(t)
 
 	tbl := streaming.NewTable(
-		func(e topic.Event) (table.Key, error) {
+		func(e event.Event) (table.Key, error) {
 			return e.(*tableRow).key, nil
 		},
-		column.Make("name", func(e topic.Event) (table.Value, error) {
+		column.Make("name", func(e event.Event) (table.Value, error) {
 			return e.(*tableRow).name, nil
 		}),
-		column.Make("age", func(e topic.Event) (table.Value, error) {
+		column.Make("age", func(e event.Event) (table.Value, error) {
 			return e.(*tableRow).age, nil
 		}),
 	)
@@ -79,7 +79,7 @@ func TestMissingColumn(t *testing.T) {
 	as := assert.New(t)
 
 	tbl := streaming.NewTable(
-		func(e topic.Event) (table.Key, error) {
+		func(e event.Event) (table.Key, error) {
 			return e.(*tableRow).key, nil
 		},
 	)
@@ -93,13 +93,13 @@ func TestBadSelectors(t *testing.T) {
 	as := assert.New(t)
 
 	tbl := streaming.NewTable(
-		func(e topic.Event) (table.Key, error) {
+		func(e event.Event) (table.Key, error) {
 			if e == nil || e.(*tableRow).key == id.Nil {
 				return id.Nil, errors.New("key-error")
 			}
 			return e.(*tableRow).key, nil
 		},
-		column.Make("explode", func(e topic.Event) (table.Value, error) {
+		column.Make("explode", func(e event.Event) (table.Value, error) {
 			return id.Nil, errors.New("column-error")
 		}),
 	)

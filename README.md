@@ -30,22 +30,22 @@ func main() {
 
     s, _ := build.
         TopicSource(left).
-        Filter(func(e topic.Event) bool {
+        Filter(func(e event.Event) bool {
             // Filter out numbers greater than or equal to 200
             return e.(int) < 200
         }).
         Join(
             build.
                 TopicSource(right).
-                Filter(func(e topic.Event) bool {
+                Filter(func(e event.Event) bool {
                     // Filter out numbers less than or equal to 100
                     return e.(int) > 100
                 }),
-            func(l topic.Event, r topic.Event) bool {
+            func(l event.Event, r event.Event) bool {
                 // Only join if the left is even, and the right is odd
                 return l.(int)%2 == 0 && r.(int)%2 == 1
             },
-            func(l topic.Event, r topic.Event) topic.Event {
+            func(l event.Event, r event.Event) event.Event {
                 // Join by multiplying the numbers
                 return l.(int) * r.(int)
             },
@@ -69,7 +69,7 @@ func main() {
     c := out.NewConsumer()
     for i := 0; i < 10; i++ {
         // Display the first ten that come out
-        fmt.Println(topic.MustReceive(c))
+        fmt.Println(receiver.MustReceive(c))
     }
     _ = c.Close()
 }

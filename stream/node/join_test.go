@@ -6,24 +6,26 @@ import (
 	"time"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/topic"
+	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/receiver"
+	"github.com/caravan/essentials/sender"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
 
-func joinGreaterThan(l topic.Event, r topic.Event) bool {
+func joinGreaterThan(l event.Event, r event.Event) bool {
 	return l.(int) > r.(int)
 }
 
-func joinSum(l topic.Event, r topic.Event) topic.Event {
+func joinSum(l event.Event, r event.Event) event.Event {
 	return l.(int) + r.(int)
 }
 
 func makeJoinError(err error) stream.Processor {
 	return stream.ProcessorFunc(
-		func(_ topic.Event, r stream.Reporter) {
+		func(_ event.Event, r stream.Reporter) {
 			r.Error(err)
 		},
 	)
@@ -51,25 +53,25 @@ func TestJoin(t *testing.T) {
 	as.Nil(s.Start())
 	lp := leftTopic.NewProducer()
 	rp := rightTopic.NewProducer()
-	lp.Send(3) // no match
+	sender.Send(lp, 3) // no match
 	time.Sleep(10 * time.Millisecond)
-	rp.Send(10) // no match
-	lp.Send(5)
+	sender.Send(rp, 10) // no match
+	sender.Send(lp, 5)
 	time.Sleep(10 * time.Millisecond)
-	rp.Send(3)
-	rp.Send(4) // no match
+	sender.Send(rp, 3)
+	sender.Send(rp, 4) // no match
 	time.Sleep(10 * time.Millisecond)
-	lp.Send(3) // no match
-	rp.Send(9)
+	sender.Send(lp, 3) // no match
+	sender.Send(rp, 9)
 	time.Sleep(10 * time.Millisecond)
-	lp.Send(12)
-	_ = rp.Close()
-	_ = lp.Close()
+	sender.Send(lp, 12)
+	rp.Close()
+	lp.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal(8, topic.MustReceive(c))
-	as.Equal(21, topic.MustReceive(c))
-	_ = c.Close()
+	as.Equal(8, receiver.MustReceive(c))
+	as.Equal(21, receiver.MustReceive(c))
+	c.Close()
 
 	as.Nil(s.Stop())
 }
@@ -90,14 +92,14 @@ func TestJoinErrored(t *testing.T) {
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
-	p.Send(32)
-	_ = p.Close()
+	sender.Send(p, 32)
+	p.Close()
 
 	c := outTopic.NewConsumer()
-	e, ok := c.Poll(100 * time.Millisecond) // nothing should come out
+	e, ok := receiver.Poll(c, 100*time.Millisecond) // nothing should come out
 	as.Nil(e)
 	as.False(ok)
-	_ = c.Close()
+	c.Close()
 
 	as.Nil(s.Stop())
 }

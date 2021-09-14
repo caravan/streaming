@@ -4,14 +4,15 @@ import (
 	"testing"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/topic"
+	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/receiver"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
 
-func sumReducer(prev topic.Event, e topic.Event) topic.Event {
+func sumReducer(prev event.Event, e event.Event) event.Event {
 	return prev.(int) + e.(int)
 }
 
@@ -30,21 +31,21 @@ func TestReduce(t *testing.T) {
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
-	p.Send(1)
-	p.Send(2)
-	p.Send(3)
+	p.Send() <- 1
+	p.Send() <- 2
+	p.Send() <- 3
 
 	c := outTopic.NewConsumer()
-	as.Equal(3, topic.MustReceive(c))
-	as.Equal(6, topic.MustReceive(c))
+	as.Equal(3, receiver.MustReceive(c))
+	as.Equal(6, receiver.MustReceive(c))
 
 	sub.Reset()
-	p.Send(4)
-	p.Send(5)
-	as.Equal(9, topic.MustReceive(c))
+	p.Send() <- 4
+	p.Send() <- 5
+	as.Equal(9, receiver.MustReceive(c))
 
-	as.Nil(c.Close())
-	as.Nil(p.Close())
+	c.Close()
+	p.Close()
 	as.Nil(s.Stop())
 }
 
@@ -62,21 +63,21 @@ func TestReduceFrom(t *testing.T) {
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
-	p.Send(1)
-	p.Send(2)
-	p.Send(3)
+	p.Send() <- 1
+	p.Send() <- 2
+	p.Send() <- 3
 
 	c := outTopic.NewConsumer()
-	as.Equal(6, topic.MustReceive(c))
-	as.Equal(8, topic.MustReceive(c))
-	as.Equal(11, topic.MustReceive(c))
+	as.Equal(6, receiver.MustReceive(c))
+	as.Equal(8, receiver.MustReceive(c))
+	as.Equal(11, receiver.MustReceive(c))
 
 	sub.Reset()
-	p.Send(4)
-	as.Equal(9, topic.MustReceive(c))
+	p.Send() <- 4
+	as.Equal(9, receiver.MustReceive(c))
 
-	as.Nil(c.Close())
-	as.Nil(p.Close())
+	c.Close()
+	p.Close()
 	as.Nil(s.Stop())
 }
 

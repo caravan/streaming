@@ -1,6 +1,7 @@
 package build
 
 import (
+	"github.com/caravan/essentials/event"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
@@ -80,7 +81,7 @@ func (b *builder) Reduce(fn node.Reducer) Builder {
 	return b.processor(node.Reduce(fn))
 }
 
-func (b *builder) ReduceFrom(fn node.Reducer, e topic.Event) Builder {
+func (b *builder) ReduceFrom(fn node.Reducer, e event.Event) Builder {
 	return b.processor(node.ReduceFrom(fn, e))
 }
 

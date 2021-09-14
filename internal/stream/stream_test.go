@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/caravan/essentials/topic"
+	"github.com/caravan/essentials/event"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +51,7 @@ func TestStreamError(t *testing.T) {
 	as.Equal(_stream.Stop{}.Error(), _stream.ErrStopRequested)
 	s := streaming.NewStream(
 		stream.ProcessorFunc(
-			func(_ topic.Event, r stream.Reporter) {
+			func(_ event.Event, r stream.Reporter) {
 				r.Error(_stream.Stop{})
 			},
 		),

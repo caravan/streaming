@@ -7,6 +7,7 @@ import (
 
 	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/debug"
+	"github.com/caravan/essentials/receiver"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func TestTopicGC(t *testing.T) {
 	debug.Enable()
 	runtime.GC()
 	debug.WithConsumer(func(c topic.Consumer) {
-		e, ok := c.Poll(200 * time.Millisecond)
+		e, ok := receiver.Poll(c, 200*time.Millisecond)
 		as.Nil(e)
 		as.False(ok)
 	})

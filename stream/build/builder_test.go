@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/caravan/essentials"
+	"github.com/caravan/essentials/event"
 	"github.com/caravan/essentials/id"
-	"github.com/caravan/essentials/topic"
+	"github.com/caravan/essentials/receiver"
+	"github.com/caravan/essentials/sender"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/build"
@@ -29,16 +31,16 @@ func TestPump(t *testing.T) {
 	p := in.NewProducer()
 	c := out.NewConsumer()
 
-	p.Send(1)
-	p.Send(2)
-	p.Send(3)
+	sender.Send(p, 1)
+	sender.Send(p, 2)
+	sender.Send(p, 3)
 
-	as.Equal(1, topic.MustReceive(c))
-	as.Equal(2, topic.MustReceive(c))
-	as.Equal(3, topic.MustReceive(c))
+	as.Equal(1, receiver.MustReceive(c))
+	as.Equal(2, receiver.MustReceive(c))
+	as.Equal(3, receiver.MustReceive(c))
 
-	_ = p.Close()
-	_ = c.Close()
+	p.Close()
+	c.Close()
 	as.Nil(s.Stop())
 }
 
@@ -49,13 +51,13 @@ func TestFilterMapReduce(t *testing.T) {
 
 	s, err := build.
 		TopicSource(in).
-		Filter(func(e topic.Event) bool {
+		Filter(func(e event.Event) bool {
 			return e.(int)%2 == 0
 		}).
-		Map(func(e topic.Event) topic.Event {
+		Map(func(e event.Event) event.Event {
 			return e.(int) * 3
 		}).
-		Reduce(func(l topic.Event, r topic.Event) topic.Event {
+		Reduce(func(l event.Event, r event.Event) event.Event {
 			return l.(int) + r.(int)
 		}).
 		TopicSink(out).
@@ -68,18 +70,18 @@ func TestFilterMapReduce(t *testing.T) {
 	p := in.NewProducer()
 	c := out.NewConsumer()
 
-	p.Send(1)
-	p.Send(2)
-	p.Send(3)
-	p.Send(4)
-	p.Send(5)
-	p.Send(6)
+	sender.Send(p, 1)
+	sender.Send(p, 2)
+	sender.Send(p, 3)
+	sender.Send(p, 4)
+	sender.Send(p, 5)
+	sender.Send(p, 6)
 
-	as.Equal(18, topic.MustReceive(c))
-	as.Equal(36, topic.MustReceive(c))
+	as.Equal(18, receiver.MustReceive(c))
+	as.Equal(36, receiver.MustReceive(c))
 
-	_ = p.Close()
-	_ = c.Close()
+	p.Close()
+	c.Close()
 	as.Nil(s.Stop())
 }
 
@@ -90,7 +92,7 @@ func TestReduceFrom(t *testing.T) {
 
 	s, err := build.
 		TopicSource(in).
-		ReduceFrom(func(l topic.Event, r topic.Event) topic.Event {
+		ReduceFrom(func(l event.Event, r event.Event) event.Event {
 			return l.(int) + r.(int)
 		}, 10).
 		TopicSink(out).
@@ -103,16 +105,16 @@ func TestReduceFrom(t *testing.T) {
 	p := in.NewProducer()
 	c := out.NewConsumer()
 
-	p.Send(1)
-	p.Send(2)
-	p.Send(3)
+	sender.Send(p, 1)
+	sender.Send(p, 2)
+	sender.Send(p, 3)
 
-	as.Equal(11, topic.MustReceive(c))
-	as.Equal(13, topic.MustReceive(c))
-	as.Equal(16, topic.MustReceive(c))
+	as.Equal(11, receiver.MustReceive(c))
+	as.Equal(13, receiver.MustReceive(c))
+	as.Equal(16, receiver.MustReceive(c))
 
-	_ = p.Close()
-	_ = c.Close()
+	p.Close()
+	c.Close()
 	as.Nil(s.Stop())
 }
 
@@ -123,7 +125,7 @@ func TestProcessorFunc(t *testing.T) {
 
 	s, err := build.
 		TopicSource(in).
-		ProcessorFunc(func(_ topic.Event, r stream.Reporter) {
+		ProcessorFunc(func(_ event.Event, r stream.Reporter) {
 			r.Result(42)
 		}).
 		TopicSink(out).
@@ -136,14 +138,14 @@ func TestProcessorFunc(t *testing.T) {
 	p := in.NewProducer()
 	c := out.NewConsumer()
 
-	p.Send(1)
-	p.Send(2)
+	sender.Send(p, 1)
+	sender.Send(p, 2)
 
-	as.Equal(42, topic.MustReceive(c))
-	as.Equal(42, topic.MustReceive(c))
+	as.Equal(42, receiver.MustReceive(c))
+	as.Equal(42, receiver.MustReceive(c))
 
-	_ = p.Close()
-	_ = c.Close()
+	p.Close()
+	c.Close()
 	as.Nil(s.Stop())
 }
 
@@ -156,13 +158,13 @@ func TestMerge(t *testing.T) {
 
 	s, err := build.
 		TopicSource(l).
-		ProcessorFunc(func(_ topic.Event, r stream.Reporter) {
+		ProcessorFunc(func(_ event.Event, r stream.Reporter) {
 			r.Result(42)
 		}).
 		Merge(
 			build.
 				TopicSource(r).
-				ProcessorFunc(func(_ topic.Event, r stream.Reporter) {
+				ProcessorFunc(func(_ event.Event, r stream.Reporter) {
 					r.Result(96)
 				}),
 		).
@@ -177,23 +179,23 @@ func TestMerge(t *testing.T) {
 	rp := r.NewProducer()
 	c := out.NewConsumer()
 
-	lp.Send(1)
-	rp.Send(2)
-	lp.Send(10001)
-	rp.Send(1234)
+	sender.Send(lp, 1)
+	sender.Send(rp, 2)
+	sender.Send(lp, 10001)
+	sender.Send(rp, 1234)
 
-	is42Or96 := func(e topic.Event) bool {
+	is42Or96 := func(e event.Event) bool {
 		return e.(int) == 42 || e.(int) == 96
 	}
 
-	as.True(is42Or96(topic.MustReceive(c)))
-	as.True(is42Or96(topic.MustReceive(c)))
-	as.True(is42Or96(topic.MustReceive(c)))
-	as.True(is42Or96(topic.MustReceive(c)))
+	as.True(is42Or96(receiver.MustReceive(c)))
+	as.True(is42Or96(receiver.MustReceive(c)))
+	as.True(is42Or96(receiver.MustReceive(c)))
+	as.True(is42Or96(receiver.MustReceive(c)))
 
-	_ = lp.Close()
-	_ = rp.Close()
-	_ = c.Close()
+	lp.Close()
+	rp.Close()
+	c.Close()
 	as.Nil(s.Stop())
 }
 
@@ -225,10 +227,10 @@ func TestJoin(t *testing.T) {
 		TopicSource(l).
 		Join(
 			build.TopicSource(r),
-			func(l topic.Event, r topic.Event) bool {
+			func(l event.Event, r event.Event) bool {
 				return true
 			},
-			func(l topic.Event, r topic.Event) topic.Event {
+			func(l event.Event, r event.Event) event.Event {
 				return l.(int) + r.(int)
 			},
 		).
@@ -243,17 +245,17 @@ func TestJoin(t *testing.T) {
 	rp := r.NewProducer()
 	c := out.NewConsumer()
 
-	lp.Send(1)
-	rp.Send(2)
-	rp.Send(1234)
-	lp.Send(10001)
+	sender.Send(lp, 1)
+	sender.Send(rp, 2)
+	sender.Send(rp, 1234)
+	sender.Send(lp, 10001)
 
-	as.Equal(3, topic.MustReceive(c))
-	as.Equal(11235, topic.MustReceive(c))
+	as.Equal(3, receiver.MustReceive(c))
+	as.Equal(11235, receiver.MustReceive(c))
 
-	_ = lp.Close()
-	_ = rp.Close()
-	_ = c.Close()
+	lp.Close()
+	rp.Close()
+	c.Close()
 	as.Nil(s.Stop())
 }
 
@@ -268,10 +270,10 @@ func TestTableSink(t *testing.T) {
 
 	in := essentials.NewTopic()
 	out := streaming.NewTable(
-		func(e topic.Event) (table.Key, error) {
+		func(e event.Event) (table.Key, error) {
 			return e.(*row).id, nil
 		},
-		column.Make("age", func(e topic.Event) (table.Value, error) {
+		column.Make("age", func(e event.Event) (table.Value, error) {
 			return e.(*row).age, nil
 		}),
 	)
@@ -287,12 +289,12 @@ func TestTableSink(t *testing.T) {
 
 	p := in.NewProducer()
 	billID := id.New()
-	p.Send(&row{
+	sender.Send(p, &row{
 		id:   billID,
 		name: "bill",
 		age:  42,
 	})
-	_ = p.Close()
+	p.Close()
 
 	time.Sleep(50 * time.Millisecond)
 	sel, err := out.Selector("age")
@@ -308,13 +310,13 @@ func TestTableLookup(t *testing.T) {
 	as := assert.New(t)
 
 	theID := id.New()
-	ks := func(_ topic.Event) (table.Key, error) {
+	ks := func(_ event.Event) (table.Key, error) {
 		return theID, nil
 	}
 
 	in := essentials.NewTopic()
 	tbl := streaming.NewTable(ks,
-		column.Make("*", func(e topic.Event) (table.Value, error) {
+		column.Make("*", func(e event.Event) (table.Value, error) {
 			return e, nil
 		}),
 	)
@@ -334,12 +336,12 @@ func TestTableLookup(t *testing.T) {
 	as.Nil(s.Start())
 
 	p := in.NewProducer()
-	p.Send("anything")
-	_ = p.Close()
+	sender.Send(p, "anything")
+	p.Close()
 
 	c := out.NewConsumer()
-	as.Equal("hello there", topic.MustReceive(c))
-	_ = c.Close()
+	as.Equal("hello there", receiver.MustReceive(c))
+	c.Close()
 }
 
 func TestJoinBuildError(t *testing.T) {
@@ -354,10 +356,10 @@ func TestJoinBuildError(t *testing.T) {
 				return nil, errors.New("error raised")
 			}),
 			build.TopicSource(r),
-			func(l topic.Event, r topic.Event) bool {
+			func(l event.Event, r event.Event) bool {
 				return true
 			},
-			func(l topic.Event, r topic.Event) topic.Event {
+			func(l event.Event, r event.Event) event.Event {
 				return l.(int) + r.(int)
 			},
 		).
