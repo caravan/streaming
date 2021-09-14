@@ -3,7 +3,7 @@ package column_test
 import (
 	"testing"
 
-	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +12,7 @@ import (
 func TestColumn(t *testing.T) {
 	as := assert.New(t)
 
-	c := column.Make("some-col", func(e event.Event) (table.Value, error) {
+	c := column.Make("some-col", func(e message.Event) (table.Value, error) {
 		return "hello", nil
 	})
 

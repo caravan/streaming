@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/event"
-	"github.com/caravan/essentials/receiver"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/stream/reporter"
 	"github.com/caravan/streaming/stream"
@@ -28,7 +27,7 @@ func TestSubprocessError(t *testing.T) {
 	s := _node.Subprocess(
 		_node.Forward,
 		stream.ProcessorFunc(
-			func(_ event.Event, r stream.Reporter) {
+			func(_ message.Event, r stream.Reporter) {
 				r.Error(errors.New("explosion"))
 			},
 		),
@@ -63,7 +62,7 @@ func TestSubprocess(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal("hello", receiver.MustReceive(c))
+	as.Equal("hello", message.MustReceive(c))
 	c.Close()
 }
 
@@ -75,7 +74,7 @@ func TestStatefulSubprocess(t *testing.T) {
 
 	sub := _node.Subprocess(
 		node.TopicSource(inTopic),
-		node.Reduce(func(l event.Event, r event.Event) event.Event {
+		node.Reduce(func(l message.Event, r message.Event) message.Event {
 			return l.(int) + r.(int)
 		}),
 		node.TopicSink(outTopic),
@@ -90,7 +89,7 @@ func TestStatefulSubprocess(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 	c := outTopic.NewConsumer()
-	as.Equal(3, receiver.MustReceive(c))
+	as.Equal(3, message.MustReceive(c))
 
 	sub.Reset()
 	p.Send() <- 11
@@ -98,6 +97,6 @@ func TestStatefulSubprocess(t *testing.T) {
 	p.Close()
 
 	time.Sleep(50 * time.Millisecond)
-	as.Equal(23, receiver.MustReceive(c))
+	as.Equal(23, message.MustReceive(c))
 	c.Close()
 }

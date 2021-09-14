@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/internal/stream/reporter"
 	"github.com/caravan/streaming/stream"
 )
@@ -46,7 +46,7 @@ func Subprocess(p ...stream.Processor) stream.Processor {
 	}
 }
 
-func (s subprocess) Process(e event.Event, r stream.Reporter) {
+func (s subprocess) Process(e message.Event, r stream.Reporter) {
 	wr := reporter.Wrap(r)
 
 	var nextContinue func(idx int) stream.Reporter
@@ -54,7 +54,7 @@ func (s subprocess) Process(e event.Event, r stream.Reporter) {
 		if idx >= len(s) {
 			return r
 		}
-		return wr.WithResult(func(e event.Event) {
+		return wr.WithResult(func(e message.Event) {
 			s[idx].Process(e, nextContinue(idx+1))
 		})
 	}

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/internal/stream/node"
 	"github.com/caravan/streaming/internal/stream/reporter"
 	"github.com/caravan/streaming/stream"
@@ -53,7 +53,7 @@ func (s *Stream) Start() error {
 	s.Unlock()
 
 	r := reporter.Make(
-		func(_ event.Event) {},
+		func(_ message.Event) {},
 		func(e error) {
 			if _, ok := e.(Stop); ok {
 				s.Lock()

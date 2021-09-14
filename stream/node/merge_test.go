@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/event"
-	"github.com/caravan/essentials/receiver"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
@@ -20,11 +19,11 @@ func TestMergeSource(t *testing.T) {
 func TestMerge(t *testing.T) {
 	as := assert.New(t)
 
-	add1 := stream.ProcessorFunc(func(e event.Event, r stream.Reporter) {
+	add1 := stream.ProcessorFunc(func(e message.Event, r stream.Reporter) {
 		r.Result(e.(int) + 1)
 	})
 
-	times2 := stream.ProcessorFunc(func(e event.Event, r stream.Reporter) {
+	times2 := stream.ProcessorFunc(func(e message.Event, r stream.Reporter) {
 		// Multiplication is slower
 		time.Sleep(50 * time.Millisecond)
 		r.Result(e.(int) * 2)
@@ -45,10 +44,10 @@ func TestMerge(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal(4, receiver.MustReceive(c))
-	as.Equal(6, receiver.MustReceive(c))
-	as.Equal(11, receiver.MustReceive(c))
-	as.Equal(20, receiver.MustReceive(c))
+	as.Equal(4, message.MustReceive(c))
+	as.Equal(6, message.MustReceive(c))
+	as.Equal(11, message.MustReceive(c))
+	as.Equal(20, message.MustReceive(c))
 	c.Close()
 
 	as.Nil(s.Stop())

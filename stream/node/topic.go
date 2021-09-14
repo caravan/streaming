@@ -3,7 +3,7 @@ package node
 import (
 	"runtime"
 
-	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 )
@@ -32,7 +32,7 @@ func TopicSource(t topic.Topic) stream.SourceProcessor {
 
 func (*topicSource) Source() {}
 
-func (s *topicSource) Process(_ event.Event, r stream.Reporter) {
+func (s *topicSource) Process(_ message.Event, r stream.Reporter) {
 	e, _ := <-s.Receive() // our Consumer, won't close
 	r.Result(e)
 }
@@ -51,6 +51,6 @@ func TopicSink(t topic.Topic) stream.SinkProcessor {
 
 func (*topicSink) Sink() {}
 
-func (s *topicSink) Process(e event.Event, _ stream.Reporter) {
+func (s *topicSink) Process(e message.Event, _ stream.Reporter) {
 	s.Send() <- e
 }

@@ -1,7 +1,7 @@
 package build
 
 import (
-	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
@@ -38,7 +38,7 @@ type (
 		// ReduceFrom provides the same forwarding of events as Reduce,
 		// but uses the provided Event as the starting value for the
 		// underlying reduction
-		ReduceFrom(node.Reducer, event.Event) Builder
+		ReduceFrom(node.Reducer, message.Event) Builder
 
 		// TableLookup retrieves a Key of the events from this Builder,
 		// and uses that key to perform a lookup on the provided Table.

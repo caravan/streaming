@@ -30,22 +30,22 @@ func main() {
 
     s, _ := build.
         TopicSource(left).
-        Filter(func(e event.Event) bool {
+        Filter(func(e message.Event) bool {
             // Filter out numbers greater than or equal to 200
             return e.(int) < 200
         }).
         Join(
             build.
                 TopicSource(right).
-                Filter(func(e event.Event) bool {
+                Filter(func(e message.Event) bool {
                     // Filter out numbers less than or equal to 100
                     return e.(int) > 100
                 }),
-            func(l event.Event, r event.Event) bool {
+            func(l message.Event, r message.Event) bool {
                 // Only join if the left is even, and the right is odd
                 return l.(int)%2 == 0 && r.(int)%2 == 1
             },
-            func(l event.Event, r event.Event) event.Event {
+            func(l message.Event, r message.Event) message.Event {
                 // Join by multiplying the numbers
                 return l.(int) * r.(int)
             },

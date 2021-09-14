@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/event"
-	"github.com/caravan/essentials/sender"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
@@ -25,16 +24,16 @@ func TestForEach(t *testing.T) {
 	inTopic := essentials.NewTopic()
 	s := streaming.NewStream(
 		node.TopicSource(inTopic),
-		node.ForEach(func(e event.Event) {
+		node.ForEach(func(e message.Event) {
 			sum += e.(int)
 		}),
 	)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
-	sender.Send(p, 1)
-	sender.Send(p, 2)
-	sender.Send(p, 3)
+	message.Send(p, 1)
+	message.Send(p, 2)
+	message.Send(p, 3)
 	p.Close()
 
 	time.Sleep(50 * time.Millisecond)

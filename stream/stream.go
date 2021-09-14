@@ -1,6 +1,6 @@
 package stream
 
-import "github.com/caravan/essentials/event"
+import "github.com/caravan/essentials/message"
 
 type (
 	// Stream is a process that performs the work assigned to it using the
@@ -21,7 +21,7 @@ type (
 	// Reporter is used by a Processor to inform further Stream processing
 	Reporter interface {
 		// Result provided for further Stream processing
-		Result(event.Event)
+		Result(message.Event)
 
 		// Error provided for Stream problem reporting
 		Error(error)
@@ -30,11 +30,11 @@ type (
 	// Processor is a value that exposes the ability to be processed as
 	// part of a Stream topology
 	Processor interface {
-		Process(event.Event, Reporter)
+		Process(message.Event, Reporter)
 	}
 
 	// ProcessorFunc is a function that acts as a Processor node
-	ProcessorFunc func(event.Event, Reporter)
+	ProcessorFunc func(message.Event, Reporter)
 
 	// SourceProcessor marks a Processor as a source for incoming Events
 	SourceProcessor interface {
@@ -58,6 +58,6 @@ type (
 )
 
 // Process makes ProcessorFunc a Processor implementation
-func (fn ProcessorFunc) Process(e event.Event, r Reporter) {
+func (fn ProcessorFunc) Process(e message.Event, r Reporter) {
 	fn(e, r)
 }

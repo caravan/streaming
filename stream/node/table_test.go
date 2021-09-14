@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/caravan/essentials/event"
 	"github.com/caravan/essentials/id"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/stream/reporter"
 	"github.com/caravan/streaming/stream/node"
@@ -22,10 +22,10 @@ func TestTableLookup(t *testing.T) {
 
 	theID := id.New()
 	tbl := streaming.NewTable(
-		func(_ event.Event) (table.Key, error) {
+		func(_ message.Event) (table.Key, error) {
 			return theID, nil
 		},
-		column.Make("*", func(e event.Event) (table.Value, error) {
+		column.Make("*", func(e message.Event) (table.Value, error) {
 			return e, nil
 		}),
 	)
@@ -34,7 +34,7 @@ func TestTableLookup(t *testing.T) {
 	as.Equal(table.Relation{"some value"}, res)
 
 	lookup, err := node.TableLookup(tbl, "*",
-		func(_ event.Event) (table.Key, error) {
+		func(_ message.Event) (table.Key, error) {
 			return theID, nil
 		},
 	)
@@ -42,7 +42,7 @@ func TestTableLookup(t *testing.T) {
 	as.Nil(err)
 
 	lookup.Process("anything", reporter.Make(
-		func(e event.Event) {
+		func(e message.Event) {
 			as.Equal("some value", e)
 		},
 		func(e error) {
@@ -56,7 +56,7 @@ func TestLookupCreateError(t *testing.T) {
 
 	tbl := streaming.NewTable(nil)
 	lookup, err := node.TableLookup(tbl, "missing",
-		func(_ event.Event) (table.Key, error) {
+		func(_ message.Event) (table.Key, error) {
 			return id.Nil, nil
 		},
 	)
@@ -69,16 +69,16 @@ func TestLookupProcessError(t *testing.T) {
 
 	theKey := id.New()
 	tbl := streaming.NewTable(
-		func(_ event.Event) (table.Key, error) {
+		func(_ message.Event) (table.Key, error) {
 			return theKey, nil
 		},
-		column.Make("*", func(e event.Event) (table.Value, error) {
+		column.Make("*", func(e message.Event) (table.Value, error) {
 			return e, nil
 		}),
 	)
 
 	lookup, err := node.TableLookup(tbl, "*",
-		func(e event.Event) (table.Key, error) {
+		func(e message.Event) (table.Key, error) {
 			if err, ok := e.(error); ok {
 				return id.Nil, err
 			}
@@ -90,7 +90,7 @@ func TestLookupProcessError(t *testing.T) {
 	as.Nil(err)
 
 	lookup.Process(errors.New("key error"), reporter.Make(
-		func(_ event.Event) {
+		func(_ message.Event) {
 			as.Fail("no result here")
 		},
 		func(err error) {
@@ -99,7 +99,7 @@ func TestLookupProcessError(t *testing.T) {
 	))
 
 	lookup.Process("missing", reporter.Make(
-		func(_ event.Event) {
+		func(_ message.Event) {
 			as.Fail("no result here")
 		},
 		func(err error) {
@@ -115,13 +115,13 @@ func TestTableSink(t *testing.T) {
 func TestTableSinkError(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := streaming.NewTable(func(e event.Event) (table.Key, error) {
+	tbl := streaming.NewTable(func(e message.Event) (table.Key, error) {
 		return id.Nil, errors.New("key error")
 	})
 
 	s := node.TableSink(tbl)
 	s.Process("some value", reporter.Make(
-		func(e event.Event) {
+		func(e message.Event) {
 			as.Fail("no result here")
 		},
 		func(e error) {

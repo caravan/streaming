@@ -1,14 +1,14 @@
 package reporter
 
 import (
-	"github.com/caravan/essentials/event"
+	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/stream"
 )
 
 type (
 	// Result is how a processor node reports a Result for further Stream
 	// processing. A processor need not produce a Result or an Error
-	Result func(event.Event)
+	Result func(message.Event)
 
 	// Error is how a processor node reports an Error to the active Stream
 	// subprocess
@@ -16,7 +16,7 @@ type (
 
 	// Reporter is the internal representation of a stream.Reporter
 	Reporter struct {
-		result func(event.Event)
+		result func(message.Event)
 		error  func(error)
 	}
 )
@@ -41,7 +41,7 @@ func Wrap(r stream.Reporter) *Reporter {
 }
 
 // Result provided for further Stream processing
-func (r *Reporter) Result(e event.Event) {
+func (r *Reporter) Result(e message.Event) {
 	r.result(e)
 }
 
