@@ -18,6 +18,7 @@ import (
     "math/rand"
 
     "github.com/caravan/essentials"
+	"github.com/caravan/essentials/message"
     "github.com/caravan/essentials/topic"
     "github.com/caravan/streaming/stream/build"
 )
@@ -59,18 +60,18 @@ func main() {
         lp := left.NewProducer()
         rp := right.NewProducer()
         for i := 0; i < 10000; i++ {
-            _ = lp.Send(rand.Intn(1000))
-            _ = rp.Send(rand.Intn(1000))
+            lp.Send() <- rand.Intn(1000)
+            rp.Send() <- rand.Intn(1000)
         }
-        _ = lp.Close()
-        _ = rp.Close()
+        lp.Close()
+        rp.Close()
     }()
 
     c := out.NewConsumer()
     for i := 0; i < 10; i++ {
         // Display the first ten that come out
-        fmt.Println(receiver.MustReceive(c))
+        fmt.Println(message.MustReceive(c))
     }
-    _ = c.Close()
+    c.Close()
 }
 ```
