@@ -71,7 +71,7 @@ func (s *Stream) Start() error {
 	return nil
 }
 
-// IsRunning returns whether or not the Stream is actively running
+// IsRunning returns whether the Stream is actively running
 func (s *Stream) IsRunning() bool {
 	s.Lock()
 	defer s.Unlock()

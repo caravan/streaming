@@ -51,10 +51,10 @@ const (
 	joinSkipped
 )
 
-// Join accepts two Processors for the sake of joining their results based
-// on a provided BinaryPredicate and Joiner. If the predicate fails,
-// nothing is forwarded, otherwise the two processed Events are combined
-// using the join function, and the result is forwarded
+// Join accepts two Processors for the sake of joining their results based on a
+// provided BinaryPredicate and Joiner. If the predicate fails, nothing is
+// forwarded, otherwise the two processed Events are combined using the join
+// function, and the result is forwarded
 func Join(
 	left stream.Processor, right stream.Processor,
 	predicate BinaryPredicate, joiner Joiner,

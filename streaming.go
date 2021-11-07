@@ -13,8 +13,8 @@ func NewStream(p ...stream.Processor) stream.Stream {
 	return _stream.Make(p...)
 }
 
-// NewTable instantiates a new Table, given a key selector and a set of
-// column definitions
+// NewTable instantiates a new Table, given a key selector and a set of column
+// definitions
 func NewTable(k table.KeySelector, c ...table.Column) table.Table {
 	return _table.Make(k, c...)
 }

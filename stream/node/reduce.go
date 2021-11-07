@@ -23,17 +23,17 @@ type (
 	}
 )
 
-// Reduce constructs a processor that reduces the Events it sees into some
-// form of aggregated Events, based on the provided function
+// Reduce constructs a processor that reduces the Events it sees into some form
+// of aggregated Events, based on the provided function
 func Reduce(fn Reducer) stream.Processor {
 	return &reduce{
 		fn: fn,
 	}
 }
 
-// ReduceFrom constructs a processor that reduces the Events it sees into
-// some form of aggregated Events, based on the provided function and
-// an initial Event
+// ReduceFrom constructs a processor that reduces the Events it sees into some
+// form of aggregated Events, based on the provided function and an initial
+// Event
 func ReduceFrom(fn Reducer, init message.Event) stream.Processor {
 	return &reduceFrom{
 		fn:   fn,

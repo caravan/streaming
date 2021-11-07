@@ -5,8 +5,8 @@ import (
 	"github.com/caravan/streaming/stream"
 )
 
-// Mapper is the signature for a function that can perform Stream
-// mapping. The Event that is returned will be passed downstream
+// Mapper is the signature for a function that can perform Stream mapping. The
+// Event that is returned will be passed downstream
 type Mapper func(message.Event) message.Event
 
 // Map constructs a processor that maps the Events it sees into new Events

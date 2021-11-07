@@ -18,8 +18,8 @@ type (
 	}
 )
 
-// TopicSource constructs a processor that receives from the provided
-// Topic every time it's invoked by the Stream
+// TopicSource constructs a processor that receives from the provided Topic
+// every time it's invoked by the Stream
 func TopicSource(t topic.Topic) stream.SourceProcessor {
 	res := &topicSource{
 		Consumer: t.NewConsumer(),

@@ -50,9 +50,8 @@ func (t *Table) Columns() []table.Column {
 	return t.cols
 }
 
-// Update adds or overwrites an Event in the Table. The Event is
-// associated with a Key that is selected from the Event using the
-// Table's KeySelector
+// Update adds or overwrites an Event in the Table. The Event is associated
+// with a Key that is selected from the Event using the Table's KeySelector
 func (t *Table) Update(e message.Event) (table.Relation, error) {
 	t.Lock()
 	defer t.Unlock()
@@ -72,8 +71,8 @@ func (t *Table) Update(e message.Event) (table.Relation, error) {
 	return row, nil
 }
 
-// Selector constructs a ColumnSelector for this Table, the results of
-// which match the provided column names
+// Selector constructs a ColumnSelector for this Table, the results of which
+// match the provided column names
 func (t *Table) Selector(c ...table.ColumnName) (table.ColumnSelector, error) {
 	sel, err := t.columnSelect(c)
 	if err != nil {

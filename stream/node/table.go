@@ -17,10 +17,10 @@ type (
 	}
 )
 
-// TableLookup performs a lookup on a table using the provided Event.
-// The KeySelector extracts a Key from this Event and uses it to perform
-// the lookup against the Table. The Column returned by the lookup is
-// forwarded to the next Processor
+// TableLookup performs a lookup on a table using the provided Event. The
+// KeySelector extracts a Key from this Event and uses it to perform the lookup
+// against the Table. The Column returned by the lookup is forwarded to the
+// next Processor
 func TableLookup(
 	t table.Table, c table.ColumnName, k table.KeySelector,
 ) (stream.Processor, error) {

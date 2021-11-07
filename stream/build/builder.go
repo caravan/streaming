@@ -19,20 +19,20 @@ var initial = &builder{
 	prev: []*builder{},
 }
 
-// Source initiates a new Builder, with its events originating in the
-// provided SourceProcessor
+// Source initiates a new Builder, with its events originating in the provided
+// SourceProcessor
 func Source(p stream.SourceProcessor) Builder {
 	return initial.processor(p)
 }
 
-// TopicSource initiates a new Builder, with its events originating in
-// the provided Topic
+// TopicSource initiates a new Builder, with its events originating in the
+// provided Topic
 func TopicSource(t topic.Topic) Builder {
 	return Source(node.TopicSource(t))
 }
 
-// Merge initiates a new Builder, with its events originating from the
-// provided Builders
+// Merge initiates a new Builder, with its events originating from the provided
+// Builders
 func Merge(builders ...Builder) Builder {
 	return initial.extend(func() (stream.Processor, error) {
 		p, err := buildProcessors(builders...)
@@ -43,9 +43,9 @@ func Merge(builders ...Builder) Builder {
 	})
 }
 
-// Join initiates a new Builder, with its events originating from the
-// provided Builders, filtered by its node.BinaryPredicate, and joined by
-// its node.Joiner
+// Join initiates a new Builder, with its events originating from the provided
+// Builders, filtered by its node.BinaryPredicate, and joined by its
+// node.Joiner
 func Join(
 	l Builder, r Builder, pred node.BinaryPredicate, joiner node.Joiner,
 ) Builder {
