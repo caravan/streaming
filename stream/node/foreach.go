@@ -9,9 +9,9 @@ import (
 // the incoming Events of a Stream.
 type ForEachFunc func(message.Event)
 
-// ForEach constructs a processor that performs an action on the Events
-// it sees using the provided function. This type of processor node
-// is considered a stream.SinkProcessor, and will not forward results
+// ForEach constructs a processor that performs an action on the Events it sees
+// using the provided function. This type of processor node is considered a
+// stream.SinkProcessor, and will not forward results
 func ForEach(fn ForEachFunc) stream.Processor {
 	return fn
 }
