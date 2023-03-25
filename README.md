@@ -20,33 +20,34 @@ import (
     "github.com/caravan/essentials"
 	"github.com/caravan/essentials/message"
     "github.com/caravan/essentials/topic"
+	"github.com/caravan/streaming/stream"    
     "github.com/caravan/streaming/stream/build"
 )
 
 func main() {
     // Create new topics with permanent retention
-    left := essentials.NewTopic()
-    right := essentials.NewTopic()
-    out := essentials.NewTopic()
+    left := topic.New()
+    right := topic.New()
+    out := topic.New()
 
     s, _ := build.
         TopicSource(left).
-        Filter(func(e message.Event) bool {
+        Filter(func(e stream.Event) bool {
             // Filter out numbers greater than or equal to 200
             return e.(int) < 200
         }).
         Join(
             build.
                 TopicSource(right).
-                Filter(func(e message.Event) bool {
+                Filter(func(e stream.Event) bool {
                     // Filter out numbers less than or equal to 100
                     return e.(int) > 100
                 }),
-            func(l message.Event, r message.Event) bool {
+            func(l stream.Event, r stream.Event) bool {
                 // Only join if the left is even, and the right is odd
                 return l.(int)%2 == 0 && r.(int)%2 == 1
             },
-            func(l message.Event, r message.Event) message.Event {
+            func(l stream.Event, r stream.Event) stream.Event {
                 // Join by multiplying the numbers
                 return l.(int) * r.(int)
             },
@@ -70,7 +71,7 @@ func main() {
     c := out.NewConsumer()
     for i := 0; i < 10; i++ {
         // Display the first ten that come out
-        fmt.Println(message.MustReceive(c))
+        fmt.Println(topic.MustReceive(c))
     }
     c.Close()
 }

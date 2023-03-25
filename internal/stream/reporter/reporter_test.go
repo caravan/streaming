@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/internal/stream/reporter"
+	"github.com/caravan/streaming/stream"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ func TestWrap(t *testing.T) {
 	as := assert.New(t)
 
 	r := reporter.Make(
-		func(e message.Event) {
+		func(e stream.Event) {
 			as.Equal("hello", e)
 		},
 		func(e error) {
@@ -42,7 +42,7 @@ func TestWith(t *testing.T) {
 	as := assert.New(t)
 
 	r := (&reporter.Reporter{}).WithResult(
-		func(e message.Event) {
+		func(e stream.Event) {
 			as.Equal("hello", e)
 		},
 	).WithError(

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/caravan/essentials/message"
+	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/table"
 )
 
@@ -52,7 +52,7 @@ func (t *Table) Columns() []table.Column {
 
 // Update adds or overwrites an Event in the Table. The Event is associated
 // with a Key that is selected from the Event using the Table's KeySelector
-func (t *Table) Update(e message.Event) (table.Relation, error) {
+func (t *Table) Update(e stream.Event) (table.Relation, error) {
 	t.Lock()
 	defer t.Unlock()
 	k, err := t.key(e)

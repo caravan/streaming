@@ -25,3 +25,5 @@
 
 # Database Files
 *.db
+
+.DS_Store

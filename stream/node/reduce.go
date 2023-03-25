@@ -1,25 +1,22 @@
 package node
 
-import (
-	"github.com/caravan/essentials/message"
-	"github.com/caravan/streaming/stream"
-)
+import "github.com/caravan/streaming/stream"
 
 type (
 	// Reducer is the signature for a function that can perform Stream
 	// reduction. The Event that is returned will be passed downstream
-	Reducer func(message.Event, message.Event) message.Event
+	Reducer func(stream.Event, stream.Event) stream.Event
 
 	reduce struct {
 		fn   Reducer
-		prev message.Event
+		prev stream.Event
 		rest bool
 	}
 
 	reduceFrom struct {
 		fn   Reducer
-		init message.Event
-		prev message.Event
+		init stream.Event
+		prev stream.Event
 	}
 )
 
@@ -34,7 +31,7 @@ func Reduce(fn Reducer) stream.Processor {
 // ReduceFrom constructs a processor that reduces the Events it sees into some
 // form of aggregated Events, based on the provided function and an initial
 // Event
-func ReduceFrom(fn Reducer, init message.Event) stream.Processor {
+func ReduceFrom(fn Reducer, init stream.Event) stream.Processor {
 	return &reduceFrom{
 		fn:   fn,
 		init: init,
@@ -42,7 +39,7 @@ func ReduceFrom(fn Reducer, init message.Event) stream.Processor {
 	}
 }
 
-func (r *reduce) Process(e message.Event, rep stream.Reporter) {
+func (r *reduce) Process(e stream.Event, rep stream.Reporter) {
 	if !r.rest {
 		r.rest = true
 		r.prev = e
@@ -57,7 +54,7 @@ func (r *reduce) Reset() {
 	r.rest = false
 }
 
-func (r *reduceFrom) Process(e message.Event, rep stream.Reporter) {
+func (r *reduceFrom) Process(e stream.Event, rep stream.Reporter) {
 	r.prev = r.fn(r.prev, e)
 	rep.Result(r.prev)
 }

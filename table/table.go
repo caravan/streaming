@@ -2,7 +2,7 @@ package table
 
 import (
 	"github.com/caravan/essentials/id"
-	"github.com/caravan/essentials/message"
+	"github.com/caravan/streaming/stream"
 )
 
 type (
@@ -13,10 +13,10 @@ type (
 	Value interface{}
 
 	// KeySelector is used to extract the Key from an Event
-	KeySelector func(message.Event) (Key, error)
+	KeySelector func(stream.Event) (Key, error)
 
 	// Selector is used to extract a Value from an Event
-	Selector func(message.Event) (Value, error)
+	Selector func(stream.Event) (Value, error)
 
 	// ColumnName is exactly what you think it is
 	ColumnName string
@@ -52,7 +52,7 @@ type (
 		// Key retrieved using the KeySelector. If an Event was already
 		// associated with the Key, it is overwritten. The materialized
 		// Relation is returned.
-		Update(message.Event) (Relation, error)
+		Update(stream.Event) (Relation, error)
 
 		// Selector creates a ColumnSelector based on the specified
 		// ColumnNames. The ColumnSelector can then be used to retrieve

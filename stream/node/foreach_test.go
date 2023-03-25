@@ -4,9 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/internal/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -21,19 +20,19 @@ func TestForEach(t *testing.T) {
 	as := assert.New(t)
 
 	sum := 0
-	inTopic := essentials.NewTopic()
+	inTopic := topic.New()
 	s := streaming.NewStream(
 		node.TopicSource(inTopic),
-		node.ForEach(func(e message.Event) {
+		node.ForEach(func(e stream.Event) {
 			sum += e.(int)
 		}),
 	)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
-	message.Send(p, 1)
-	message.Send(p, 2)
-	message.Send(p, 3)
+	topic.Send(p, 1)
+	topic.Send(p, 2)
+	topic.Send(p, 3)
 	p.Close()
 
 	time.Sleep(50 * time.Millisecond)

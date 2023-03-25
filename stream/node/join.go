@@ -3,17 +3,16 @@ package node
 import (
 	"sync"
 
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/stream"
 )
 
 type (
 	// BinaryPredicate is the signature for a function that can perform
 	// Stream joining. Returning true will bind the Events in the Stream
-	BinaryPredicate func(message.Event, message.Event) bool
+	BinaryPredicate func(stream.Event, stream.Event) bool
 
 	// Joiner combines the left and right Events into some combined result
-	Joiner func(message.Event, message.Event) message.Event
+	Joiner func(stream.Event, stream.Event) stream.Event
 
 	join struct {
 		left      stream.Processor
@@ -29,8 +28,8 @@ type (
 		*join
 		forward stream.Reporter
 		state   joinState
-		left    message.Event
-		right   message.Event
+		left    stream.Event
+		right   stream.Event
 	}
 
 	leftJoinReporter struct {
@@ -69,7 +68,7 @@ func Join(
 
 func (j *join) Source() {}
 
-func (j *join) Process(e message.Event, r stream.Reporter) {
+func (j *join) Process(e stream.Event, r stream.Reporter) {
 	var group sync.WaitGroup
 	group.Add(2)
 
@@ -104,7 +103,7 @@ func (r *joinReporter) resolve() {
 	}
 }
 
-func (r *leftJoinReporter) Result(e message.Event) {
+func (r *leftJoinReporter) Result(e stream.Event) {
 	r.Lock()
 	defer r.Unlock()
 
@@ -119,7 +118,7 @@ func (r *leftJoinReporter) Result(e message.Event) {
 	// default: perform debug logging
 }
 
-func (r *rightJoinReporter) Result(e message.Event) {
+func (r *rightJoinReporter) Result(e stream.Event) {
 	r.Lock()
 	defer r.Unlock()
 

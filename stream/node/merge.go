@@ -3,7 +3,6 @@ package node
 import (
 	"sync"
 
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/stream"
 )
 
@@ -16,7 +15,7 @@ func Merge(p ...stream.Processor) stream.SourceProcessor {
 
 func (m merge) Source() {}
 
-func (m merge) Process(e message.Event, r stream.Reporter) {
+func (m merge) Process(e stream.Event, r stream.Reporter) {
 	var group sync.WaitGroup
 	group.Add(len(m))
 

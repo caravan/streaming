@@ -1,13 +1,10 @@
 package node
 
-import (
-	"github.com/caravan/essentials/message"
-	"github.com/caravan/streaming/stream"
-)
+import "github.com/caravan/streaming/stream"
 
 // ForEachFunc is the signature for a function that can perform some action on
 // the incoming Events of a Stream.
-type ForEachFunc func(message.Event)
+type ForEachFunc func(stream.Event)
 
 // ForEach constructs a processor that performs an action on the Events it sees
 // using the provided function. This type of processor node is considered a
@@ -20,6 +17,6 @@ func ForEach(fn ForEachFunc) stream.Processor {
 func (ForEachFunc) Sink() {}
 
 // Process turns ForEachFunc into a stream.Processor
-func (fn ForEachFunc) Process(e message.Event, _ stream.Reporter) {
+func (fn ForEachFunc) Process(e stream.Event, _ stream.Reporter) {
 	fn(e)
 }

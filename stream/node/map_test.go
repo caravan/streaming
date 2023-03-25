@@ -3,9 +3,10 @@ package node_test
 import (
 	"testing"
 
-	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/message"
+	"github.com/caravan/streaming/stream"
+
 	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/internal/topic"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,11 +14,11 @@ import (
 func TestMap(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := essentials.NewTopic()
-	outTopic := essentials.NewTopic()
+	inTopic := topic.New()
+	outTopic := topic.New()
 	s := streaming.NewStream(
 		node.TopicSource(inTopic),
-		node.Map(func(e message.Event) message.Event {
+		node.Map(func(e stream.Event) stream.Event {
 			return "Hello, " + e.(string) + "!"
 		}),
 		node.TopicSink(outTopic),
@@ -29,7 +30,7 @@ func TestMap(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	greeting := message.MustReceive(c)
+	greeting := topic.MustReceive(c)
 	c.Close()
 
 	as.Equal("Hello, Caravan!", greeting)

@@ -1,7 +1,6 @@
 package node
 
 import (
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/table"
 )
@@ -34,7 +33,7 @@ func TableLookup(
 	}, nil
 }
 
-func (t tableLookup) Process(e message.Event, r stream.Reporter) {
+func (t tableLookup) Process(e stream.Event, r stream.Reporter) {
 	k, err := t.KeySelector(e)
 	if err != nil {
 		r.Error(err)
@@ -58,7 +57,7 @@ func TableSink(t table.Table) stream.SinkProcessor {
 
 func (*tableSink) Sink() {}
 
-func (t *tableSink) Process(e message.Event, r stream.Reporter) {
+func (t *tableSink) Process(e stream.Event, r stream.Reporter) {
 	if _, err := t.Update(e); err != nil {
 		r.Error(err)
 	}

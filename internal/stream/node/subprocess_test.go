@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/stream/reporter"
+	"github.com/caravan/streaming/internal/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +27,7 @@ func TestSubprocessError(t *testing.T) {
 	s := _node.Subprocess(
 		_node.Forward,
 		stream.ProcessorFunc(
-			func(_ message.Event, r stream.Reporter) {
+			func(_ stream.Event, r stream.Reporter) {
 				r.Error(errors.New("explosion"))
 			},
 		),
@@ -46,8 +46,8 @@ func TestEmptySubprocess(t *testing.T) {
 func TestSubprocess(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := essentials.NewTopic()
-	outTopic := essentials.NewTopic()
+	inTopic := topic.New()
+	outTopic := topic.New()
 
 	sub := _node.Subprocess(
 		node.TopicSource(inTopic),
@@ -62,19 +62,19 @@ func TestSubprocess(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal("hello", message.MustReceive(c))
+	as.Equal("hello", message.MustReceive[stream.Event](c))
 	c.Close()
 }
 
 func TestStatefulSubprocess(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := essentials.NewTopic()
-	outTopic := essentials.NewTopic()
+	inTopic := topic.New()
+	outTopic := topic.New()
 
 	sub := _node.Subprocess(
 		node.TopicSource(inTopic),
-		node.Reduce(func(l message.Event, r message.Event) message.Event {
+		node.Reduce(func(l stream.Event, r stream.Event) stream.Event {
 			return l.(int) + r.(int)
 		}),
 		node.TopicSink(outTopic),
@@ -89,7 +89,7 @@ func TestStatefulSubprocess(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 	c := outTopic.NewConsumer()
-	as.Equal(3, message.MustReceive(c))
+	as.Equal(3, message.MustReceive[stream.Event](c))
 
 	sub.Reset()
 	p.Send() <- 11
@@ -97,6 +97,6 @@ func TestStatefulSubprocess(t *testing.T) {
 	p.Close()
 
 	time.Sleep(50 * time.Millisecond)
-	as.Equal(23, message.MustReceive(c))
+	as.Equal(23, message.MustReceive[stream.Event](c))
 	c.Close()
 }

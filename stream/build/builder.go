@@ -1,7 +1,6 @@
 package build
 
 import (
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
@@ -27,7 +26,7 @@ func Source(p stream.SourceProcessor) Builder {
 
 // TopicSource initiates a new Builder, with its events originating in the
 // provided Topic
-func TopicSource(t topic.Topic) Builder {
+func TopicSource(t topic.Topic[stream.Event]) Builder {
 	return Source(node.TopicSource(t))
 }
 
@@ -81,7 +80,7 @@ func (b *builder) Reduce(fn node.Reducer) Builder {
 	return b.processor(node.Reduce(fn))
 }
 
-func (b *builder) ReduceFrom(fn node.Reducer, e message.Event) Builder {
+func (b *builder) ReduceFrom(fn node.Reducer, e stream.Event) Builder {
 	return b.processor(node.ReduceFrom(fn, e))
 }
 
@@ -109,7 +108,7 @@ func (b *builder) Sink(p stream.SinkProcessor) TerminalBuilder {
 	return b.processor(p)
 }
 
-func (b *builder) TopicSink(t topic.Topic) TerminalBuilder {
+func (b *builder) TopicSink(t topic.Topic[stream.Event]) TerminalBuilder {
 	return b.Sink(node.TopicSink(t))
 }
 

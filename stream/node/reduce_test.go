@@ -3,23 +3,22 @@ package node_test
 import (
 	"testing"
 
-	"github.com/caravan/essentials"
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/internal/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
 
-func sumReducer(prev message.Event, e message.Event) message.Event {
+func sumReducer(prev stream.Event, e stream.Event) stream.Event {
 	return prev.(int) + e.(int)
 }
 
 func TestReduce(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := essentials.NewTopic()
-	outTopic := essentials.NewTopic()
+	inTopic := topic.New()
+	outTopic := topic.New()
 
 	sub := node.Subprocess(
 		node.TopicSource(inTopic),
@@ -35,13 +34,13 @@ func TestReduce(t *testing.T) {
 	p.Send() <- 3
 
 	c := outTopic.NewConsumer()
-	as.Equal(3, message.MustReceive(c))
-	as.Equal(6, message.MustReceive(c))
+	as.Equal(3, topic.MustReceive(c))
+	as.Equal(6, topic.MustReceive(c))
 
 	sub.Reset()
 	p.Send() <- 4
 	p.Send() <- 5
-	as.Equal(9, message.MustReceive(c))
+	as.Equal(9, topic.MustReceive(c))
 
 	c.Close()
 	p.Close()
@@ -51,8 +50,8 @@ func TestReduce(t *testing.T) {
 func TestReduceFrom(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := essentials.NewTopic()
-	outTopic := essentials.NewTopic()
+	inTopic := topic.New()
+	outTopic := topic.New()
 	sub := node.Subprocess(
 		node.TopicSource(inTopic),
 		node.ReduceFrom(sumReducer, 5),
@@ -67,13 +66,13 @@ func TestReduceFrom(t *testing.T) {
 	p.Send() <- 3
 
 	c := outTopic.NewConsumer()
-	as.Equal(6, message.MustReceive(c))
-	as.Equal(8, message.MustReceive(c))
-	as.Equal(11, message.MustReceive(c))
+	as.Equal(6, topic.MustReceive(c))
+	as.Equal(8, topic.MustReceive(c))
+	as.Equal(11, topic.MustReceive(c))
 
 	sub.Reset()
 	p.Send() <- 4
-	as.Equal(9, message.MustReceive(c))
+	as.Equal(9, topic.MustReceive(c))
 
 	c.Close()
 	p.Close()

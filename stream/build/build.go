@@ -1,7 +1,6 @@
 package build
 
 import (
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
@@ -38,7 +37,7 @@ type (
 		// ReduceFrom provides the same forwarding of events as Reduce,
 		// but uses the provided Event as the starting value for the
 		// underlying reduction
-		ReduceFrom(node.Reducer, message.Event) Builder
+		ReduceFrom(node.Reducer, stream.Event) Builder
 
 		// TableLookup retrieves a Key of the events from this Builder,
 		// and uses that key to perform a lookup on the provided Table.
@@ -66,7 +65,7 @@ type (
 		// TopicSink adds a SinkProcessor to this Builder that is based
 		// on the specified Topic. So all events that this Stream produces
 		// will end up in that Topic. This is a terminal in the graph
-		TopicSink(topic.Topic) TerminalBuilder
+		TopicSink(topic.Topic[stream.Event]) TerminalBuilder
 
 		// TableSink adds a SinkProcessor to this Builder that is based
 		// on the specified Table. So all events that this Stream produces
