@@ -16,12 +16,10 @@ type (
 		IsRunning() bool
 	}
 
-	Event = any
-
 	// Reporter is used by a Processor to inform further Stream processing
-	Reporter interface {
+	Reporter[Msg any] interface {
 		// Result provided for further Stream processing
-		Result(Event)
+		Result(Msg)
 
 		// Error provided for Stream problem reporting
 		Error(error)
@@ -29,35 +27,35 @@ type (
 
 	// Processor is a value that exposes the ability to be processed as
 	// part of a Stream topology
-	Processor interface {
-		Process(Event, Reporter)
+	Processor[Msg any] interface {
+		Process(Msg, Reporter[Msg])
 	}
 
 	// ProcessorFunc is a function that acts as a Processor node
-	ProcessorFunc func(Event, Reporter)
+	ProcessorFunc[Msg any] func(Msg, Reporter[Msg])
 
-	// SourceProcessor marks a Processor as a source for incoming Events
-	SourceProcessor interface {
-		Processor
+	// SourceProcessor marks a Processor as a source for incoming messages
+	SourceProcessor[Msg any] interface {
+		Processor[Msg]
 		Source()
 	}
 
 	// StatefulProcessor marks a Processor as maintaining an internal
-	// state that would influence the Events it forwards. For example,
+	// state that would influence the messages it forwards. For example,
 	// reducers tend to be stateful
-	StatefulProcessor interface {
-		Processor
+	StatefulProcessor[Msg any] interface {
+		Processor[Msg]
 		Reset()
 	}
 
-	// SinkProcessor marks a Processor as a sink for outgoing Events
-	SinkProcessor interface {
-		Processor
+	// SinkProcessor marks a Processor as a sink for outgoing messages
+	SinkProcessor[Msg any] interface {
+		Processor[Msg]
 		Sink()
 	}
 )
 
 // Process makes ProcessorFunc a Processor implementation
-func (fn ProcessorFunc) Process(e Event, r Reporter) {
-	fn(e, r)
+func (fn ProcessorFunc[Msg]) Process(m Msg, r Reporter[Msg]) {
+	fn(m, r)
 }

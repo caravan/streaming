@@ -12,7 +12,7 @@ import (
 )
 
 func TestForEachIsSink(t *testing.T) {
-	sink := node.ForEach(nil).(stream.SinkProcessor)
+	sink := node.ForEach[any](nil).(stream.SinkProcessor[any])
 	sink.Sink()
 }
 
@@ -20,19 +20,20 @@ func TestForEach(t *testing.T) {
 	as := assert.New(t)
 
 	sum := 0
-	inTopic := topic.New()
-	s := streaming.NewStream(
-		node.TopicSource(inTopic),
-		node.ForEach(func(e stream.Event) {
-			sum += e.(int)
+	inTopic := topic.New[int]()
+	typed := streaming.Of[int]()
+	s := typed.NewStream(
+		typed.TopicSource(inTopic),
+		typed.ForEach(func(m int) {
+			sum += m
 		}),
 	)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
-	topic.Send(p, 1)
-	topic.Send(p, 2)
-	topic.Send(p, 3)
+	p.Send() <- 1
+	p.Send() <- 2
+	p.Send() <- 3
 	p.Close()
 
 	time.Sleep(50 * time.Millisecond)

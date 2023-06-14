@@ -2,11 +2,8 @@ package node
 
 import "github.com/caravan/streaming/stream"
 
-type forward struct{}
+type Forward[Msg any] struct{}
 
-// Forward is a processor that forwards the provided Event as its Result
-var Forward = forward{}
-
-func (forward) Process(e stream.Event, r stream.Reporter) {
-	r.Result(e)
+func (Forward[Msg]) Process(m Msg, r stream.Reporter[Msg]) {
+	r.Result(m)
 }

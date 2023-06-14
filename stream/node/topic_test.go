@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/caravan/streaming"
+
 	"github.com/caravan/essentials/debug"
 	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming/internal/topic"
@@ -13,18 +15,19 @@ import (
 )
 
 func TestTopicSourceSink(t *testing.T) {
-	top := topic.New()
-	node.TopicSource(top).Source()
-	node.TopicSink(top).Sink()
+	top := topic.New[any]()
+	node.TopicSource[any](top).Source()
+	node.TopicSink[any](top).Sink()
 }
 
 func TestTopicGC(t *testing.T) {
 	as := assert.New(t)
 
-	top := topic.New()
-	node.Subprocess(
-		node.TopicSource(top),
-		node.TopicSink(top),
+	top := topic.New[any]()
+	typed := streaming.Of[any]()
+	typed.Subprocess(
+		typed.TopicSource(top),
+		typed.TopicSink(top),
 	)
 
 	debug.Enable()

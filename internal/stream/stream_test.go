@@ -14,7 +14,7 @@ import (
 func TestStreamCreate(t *testing.T) {
 	as := assert.New(t)
 
-	s := streaming.NewStream()
+	s := streaming.NewStream[any]()
 	as.NotNil(s)
 	as.EqualError(s.Stop(), _stream.ErrAlreadyStopped)
 }
@@ -22,7 +22,7 @@ func TestStreamCreate(t *testing.T) {
 func TestStreamStart(t *testing.T) {
 	as := assert.New(t)
 
-	s := streaming.NewStream()
+	s := streaming.NewStream[any]()
 	as.Nil(s.Start())
 	as.EqualError(s.Start(), _stream.ErrAlreadyStarted)
 }
@@ -30,14 +30,14 @@ func TestStreamStart(t *testing.T) {
 func TestStreamStop(t *testing.T) {
 	as := assert.New(t)
 
-	s := streaming.NewStream()
+	s := streaming.NewStream[any]()
 	as.EqualError(s.Stop(), _stream.ErrAlreadyStopped)
 }
 
 func TestStreamStartStop(t *testing.T) {
 	as := assert.New(t)
 
-	s := streaming.NewStream()
+	s := streaming.NewStream[any]()
 	as.Nil(s.Start())
 	as.EqualError(s.Start(), _stream.ErrAlreadyStarted)
 
@@ -48,9 +48,9 @@ func TestStreamStartStop(t *testing.T) {
 func TestStreamError(t *testing.T) {
 	as := assert.New(t)
 	as.Equal(_stream.Stop{}.Error(), _stream.ErrStopRequested)
-	s := streaming.NewStream(
-		stream.ProcessorFunc(
-			func(_ stream.Event, r stream.Reporter) {
+	s := streaming.NewStream[any](
+		stream.ProcessorFunc[any](
+			func(_ any, r stream.Reporter[any]) {
 				r.Error(_stream.Stop{})
 			},
 		),

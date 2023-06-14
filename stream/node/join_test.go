@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/caravan/essentials/message"
+
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/topic"
 	"github.com/caravan/streaming/stream"
@@ -12,62 +14,63 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func joinGreaterThan(l stream.Event, r stream.Event) bool {
-	return l.(int) > r.(int)
+func joinGreaterThan(l int, r int) bool {
+	return l > r
 }
 
-func joinSum(l stream.Event, r stream.Event) stream.Event {
-	return l.(int) + r.(int)
+func joinSum(l int, r int) int {
+	return l + r
 }
 
-func makeJoinError(err error) stream.Processor {
-	return stream.ProcessorFunc(
-		func(_ stream.Event, r stream.Reporter) {
+func makeJoinError(err error) stream.Processor[int] {
+	return stream.ProcessorFunc[int](
+		func(_ int, r stream.Reporter[int]) {
 			r.Error(err)
 		},
 	)
 }
 
 func TestJoinSource(t *testing.T) {
-	node.Join(nil, nil, nil, nil).Source()
+	node.Join[int](nil, nil, nil, nil).Source()
 }
 
 func TestJoin(t *testing.T) {
 	as := assert.New(t)
 
-	leftTopic := topic.New()
-	rightTopic := topic.New()
-	outTopic := topic.New()
-	s := streaming.NewStream(
-		node.Join(
-			node.TopicSource(leftTopic),
-			node.TopicSource(rightTopic),
+	leftTopic := topic.New[int]()
+	rightTopic := topic.New[int]()
+	outTopic := topic.New[int]()
+	typed := streaming.Of[int]()
+	s := typed.NewStream(
+		typed.Join(
+			typed.TopicSource(leftTopic),
+			typed.TopicSource(rightTopic),
 			joinGreaterThan, joinSum,
 		),
-		node.TopicSink(outTopic),
+		typed.TopicSink(outTopic),
 	)
 
 	as.Nil(s.Start())
 	lp := leftTopic.NewProducer()
 	rp := rightTopic.NewProducer()
-	topic.Send(lp, 3) // no match
+	lp.Send() <- 3 // no match
 	time.Sleep(10 * time.Millisecond)
-	topic.Send(rp, 10) // no match
-	topic.Send(lp, 5)
+	rp.Send() <- 10 // no match
+	lp.Send() <- 5
 	time.Sleep(10 * time.Millisecond)
-	topic.Send(rp, 3)
-	topic.Send(rp, 4) // no match
+	rp.Send() <- 3
+	rp.Send() <- 4 // no match
 	time.Sleep(10 * time.Millisecond)
-	topic.Send(lp, 3) // no match
-	topic.Send(rp, 9)
+	lp.Send() <- 3 // no match
+	rp.Send() <- 9
 	time.Sleep(10 * time.Millisecond)
-	topic.Send(lp, 12)
+	lp.Send() <- 12
 	rp.Close()
 	lp.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal(8, topic.MustReceive(c))
-	as.Equal(21, topic.MustReceive(c))
+	as.Equal(8, <-c.Receive())
+	as.Equal(21, <-c.Receive())
 	c.Close()
 
 	as.Nil(s.Stop())
@@ -76,25 +79,26 @@ func TestJoin(t *testing.T) {
 func TestJoinErrored(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New()
-	outTopic := topic.New()
-	s := streaming.NewStream(
-		node.Join(
-			node.TopicSource(inTopic),
+	inTopic := topic.New[int]()
+	outTopic := topic.New[int]()
+	typed := streaming.Of[int]()
+	s := typed.NewStream(
+		typed.Join(
+			typed.TopicSource(inTopic),
 			makeJoinError(errors.New("error")),
 			joinGreaterThan, joinSum,
 		),
-		node.TopicSink(outTopic),
+		typed.TopicSink(outTopic),
 	)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
-	topic.Send(p, 32)
+	p.Send() <- 32
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	e, ok := topic.Poll(c, 100*time.Millisecond) // nothing should come out
-	as.Nil(e)
+	e, ok := message.Poll[int](c, 100*time.Millisecond) // nothing should come out
+	as.Zero(e)
 	as.False(ok)
 	c.Close()
 

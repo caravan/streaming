@@ -5,19 +5,18 @@ import (
 	"testing"
 
 	"github.com/caravan/streaming/internal/stream/reporter"
-	"github.com/caravan/streaming/stream"
 	"github.com/stretchr/testify/assert"
 )
 
-type wrappable struct {
-	*reporter.Reporter
+type wrappable[Msg any] struct {
+	*reporter.Reporter[Msg]
 }
 
 func TestWrap(t *testing.T) {
 	as := assert.New(t)
 
 	r := reporter.Make(
-		func(e stream.Event) {
+		func(e string) {
 			as.Equal("hello", e)
 		},
 		func(e error) {
@@ -25,11 +24,11 @@ func TestWrap(t *testing.T) {
 		},
 	)
 
-	as.Equal(r, reporter.Wrap(r))
+	as.Equal(r, reporter.Wrap[string](r))
 	r.Result("hello")
 	r.Error(errors.New("explosion"))
 
-	w := reporter.Wrap(&wrappable{
+	w := reporter.Wrap[string](&wrappable[string]{
 		Reporter: r,
 	})
 
@@ -41,9 +40,9 @@ func TestWrap(t *testing.T) {
 func TestWith(t *testing.T) {
 	as := assert.New(t)
 
-	r := (&reporter.Reporter{}).WithResult(
-		func(e stream.Event) {
-			as.Equal("hello", e)
+	r := (&reporter.Reporter[string]{}).WithResult(
+		func(m string) {
+			as.Equal("hello", m)
 		},
 	).WithError(
 		func(e error) {

@@ -9,35 +9,35 @@ import (
 type (
 	// BinaryPredicate is the signature for a function that can perform
 	// Stream joining. Returning true will bind the Events in the Stream
-	BinaryPredicate func(stream.Event, stream.Event) bool
+	BinaryPredicate[Msg any] func(Msg, Msg) bool
 
 	// Joiner combines the left and right Events into some combined result
-	Joiner func(stream.Event, stream.Event) stream.Event
+	Joiner[Msg any] func(Msg, Msg) Msg
 
-	join struct {
-		left      stream.Processor
-		right     stream.Processor
-		predicate BinaryPredicate
-		joiner    Joiner
+	join[Msg any] struct {
+		left      stream.Processor[Msg]
+		right     stream.Processor[Msg]
+		predicate BinaryPredicate[Msg]
+		joiner    Joiner[Msg]
 	}
 
 	joinState int
 
-	joinReporter struct {
+	joinReporter[Msg any] struct {
 		sync.Mutex
-		*join
-		forward stream.Reporter
+		*join[Msg]
+		forward stream.Reporter[Msg]
 		state   joinState
-		left    stream.Event
-		right   stream.Event
+		left    Msg
+		right   Msg
 	}
 
-	leftJoinReporter struct {
-		*joinReporter
+	leftJoinReporter[Msg any] struct {
+		*joinReporter[Msg]
 	}
 
-	rightJoinReporter struct {
-		*joinReporter
+	rightJoinReporter[Msg any] struct {
+		*joinReporter[Msg]
 	}
 )
 
@@ -54,11 +54,11 @@ const (
 // provided BinaryPredicate and Joiner. If the predicate fails, nothing is
 // forwarded, otherwise the two processed Events are combined using the join
 // function, and the result is forwarded
-func Join(
-	left stream.Processor, right stream.Processor,
-	predicate BinaryPredicate, joiner Joiner,
-) stream.SourceProcessor {
-	return &join{
+func Join[Msg any](
+	left stream.Processor[Msg], right stream.Processor[Msg],
+	predicate BinaryPredicate[Msg], joiner Joiner[Msg],
+) stream.SourceProcessor[Msg] {
+	return &join[Msg]{
 		left:      left,
 		right:     right,
 		predicate: predicate,
@@ -66,26 +66,26 @@ func Join(
 	}
 }
 
-func (j *join) Source() {}
+func (j *join[_]) Source() {}
 
-func (j *join) Process(e stream.Event, r stream.Reporter) {
+func (j *join[Msg]) Process(m Msg, r stream.Reporter[Msg]) {
 	var group sync.WaitGroup
 	group.Add(2)
 
-	br := &joinReporter{
+	br := &joinReporter[Msg]{
 		join:    j,
 		forward: r,
 	}
 
 	go func() {
-		j.left.Process(e, &leftJoinReporter{
+		j.left.Process(m, &leftJoinReporter[Msg]{
 			joinReporter: br,
 		})
 		group.Done()
 	}()
 
 	go func() {
-		j.right.Process(e, &rightJoinReporter{
+		j.right.Process(m, &rightJoinReporter[Msg]{
 			joinReporter: br,
 		})
 		group.Done()
@@ -94,7 +94,7 @@ func (j *join) Process(e stream.Event, r stream.Reporter) {
 	group.Wait()
 }
 
-func (r *joinReporter) resolve() {
+func (r *joinReporter[_]) resolve() {
 	if r.predicate(r.left, r.right) {
 		r.forward.Result(r.joiner(r.left, r.right))
 		r.state = joinForwarded
@@ -103,37 +103,37 @@ func (r *joinReporter) resolve() {
 	}
 }
 
-func (r *leftJoinReporter) Result(e stream.Event) {
+func (r *leftJoinReporter[Msg]) Result(m Msg) {
 	r.Lock()
 	defer r.Unlock()
 
 	switch r.state {
 	case joinRight:
-		r.left = e
+		r.left = m
 		r.resolve()
 	case joinInit:
-		r.left = e
+		r.left = m
 		r.state = joinLeft
 	}
 	// default: perform debug logging
 }
 
-func (r *rightJoinReporter) Result(e stream.Event) {
+func (r *rightJoinReporter[Msg]) Result(m Msg) {
 	r.Lock()
 	defer r.Unlock()
 
 	switch r.state {
 	case joinLeft:
-		r.right = e
+		r.right = m
 		r.resolve()
 	case joinInit:
-		r.right = e
+		r.right = m
 		r.state = joinRight
 	}
 	// default: perform debug logging
 }
 
-func (r *joinReporter) Error(e error) {
+func (r *joinReporter[_]) Error(e error) {
 	r.Lock()
 	defer r.Unlock()
 

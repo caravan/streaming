@@ -5,12 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/stream/reporter"
 	"github.com/caravan/streaming/internal/topic"
 	"github.com/caravan/streaming/stream"
-	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 
 	_node "github.com/caravan/streaming/internal/stream/node"
@@ -19,15 +17,15 @@ import (
 func TestSubprocessError(t *testing.T) {
 	as := assert.New(t)
 
-	r := reporter.Make(nil, func(e error) {
+	r := reporter.Make[any](nil, func(e error) {
 		as.NotNil(e)
 		as.EqualError(e, "explosion")
 	})
 
-	s := _node.Subprocess(
-		_node.Forward,
-		stream.ProcessorFunc(
-			func(_ stream.Event, r stream.Reporter) {
+	s := _node.Subprocess[any](
+		_node.Forward[any]{},
+		stream.ProcessorFunc[any](
+			func(_ any, r stream.Reporter[any]) {
 				r.Error(errors.New("explosion"))
 			},
 		),
@@ -38,23 +36,26 @@ func TestSubprocessError(t *testing.T) {
 
 func TestEmptySubprocess(t *testing.T) {
 	as := assert.New(t)
-	s := _node.Subprocess()
+
+	typed := streaming.Of[any]()
+	s := typed.Subprocess()
 	as.NotNil(s)
-	as.Equal(_node.Forward, s)
+	as.Equal(_node.Forward[any]{}, s)
 }
 
 func TestSubprocess(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New()
-	outTopic := topic.New()
+	inTopic := topic.New[string]()
+	outTopic := topic.New[string]()
 
-	sub := _node.Subprocess(
-		node.TopicSource(inTopic),
-		node.TopicSink(outTopic),
+	typed := streaming.Of[string]()
+	sub := typed.Subprocess(
+		typed.TopicSource(inTopic),
+		typed.TopicSink(outTopic),
 	)
 
-	s := streaming.NewStream(sub)
+	s := typed.NewStream(sub)
 	s.Start()
 
 	p := inTopic.NewProducer()
@@ -62,25 +63,26 @@ func TestSubprocess(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal("hello", message.MustReceive[stream.Event](c))
+	as.Equal("hello", <-c.Receive())
 	c.Close()
 }
 
 func TestStatefulSubprocess(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New()
-	outTopic := topic.New()
+	inTopic := topic.New[int]()
+	outTopic := topic.New[int]()
+	typed := streaming.Of[int]()
 
-	sub := _node.Subprocess(
-		node.TopicSource(inTopic),
-		node.Reduce(func(l stream.Event, r stream.Event) stream.Event {
-			return l.(int) + r.(int)
+	sub := typed.Subprocess(
+		typed.TopicSource(inTopic),
+		typed.Reduce(func(l int, r int) int {
+			return l + r
 		}),
-		node.TopicSink(outTopic),
-	).(stream.StatefulProcessor)
+		typed.TopicSink(outTopic),
+	).(stream.StatefulProcessor[int])
 
-	s := streaming.NewStream(sub)
+	s := typed.NewStream(sub)
 	s.Start()
 
 	p := inTopic.NewProducer()
@@ -89,7 +91,7 @@ func TestStatefulSubprocess(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 	c := outTopic.NewConsumer()
-	as.Equal(3, message.MustReceive[stream.Event](c))
+	as.Equal(3, <-c.Receive())
 
 	sub.Reset()
 	p.Send() <- 11
@@ -97,6 +99,6 @@ func TestStatefulSubprocess(t *testing.T) {
 	p.Close()
 
 	time.Sleep(50 * time.Millisecond)
-	as.Equal(23, message.MustReceive[stream.Event](c))
+	as.Equal(23, <-c.Receive())
 	c.Close()
 }

@@ -11,20 +11,15 @@ import (
 
 type (
 	// Stream is the internal implementation of a Stream
-	Stream struct {
+	Stream[Msg any] struct {
 		sync.Mutex
-		root    stream.Processor
+		root    stream.Processor[Msg]
 		running bool
 	}
 
 	// Stop is a special Error that instructs the Stream to completely
 	// stop operating. This should only be used in exceptional cases
 	Stop struct{}
-
-	// Init is a special Event that a Stream provides to the first
-	// processor node that it processes. This node is usually assumed to
-	// be a SourceProcessor
-	Init struct{}
 )
 
 // Error messages
@@ -35,14 +30,14 @@ const (
 )
 
 // Make builds a Stream
-func Make(p ...stream.Processor) *Stream {
-	return &Stream{
+func Make[Msg any](p ...stream.Processor[Msg]) *Stream[Msg] {
+	return &Stream[Msg]{
 		root: node.Subprocess(p...),
 	}
 }
 
 // Start kicks off the background routine for this Stream
-func (s *Stream) Start() error {
+func (s *Stream[Msg]) Start() error {
 	s.Lock()
 	if s.isRunning() {
 		s.Unlock()
@@ -52,7 +47,7 @@ func (s *Stream) Start() error {
 	s.Unlock()
 
 	r := reporter.Make(
-		func(_ stream.Event) {},
+		func(_ Msg) {},
 		func(e error) {
 			if _, ok := e.(Stop); ok {
 				s.Lock()
@@ -64,25 +59,26 @@ func (s *Stream) Start() error {
 
 	go func() {
 		for s.IsRunning() {
-			s.root.Process(Init{}, r)
+			var init Msg
+			s.root.Process(init, r)
 		}
 	}()
 	return nil
 }
 
 // IsRunning returns whether the Stream is actively running
-func (s *Stream) IsRunning() bool {
+func (s *Stream[_]) IsRunning() bool {
 	s.Lock()
 	defer s.Unlock()
 	return s.isRunning()
 }
 
-func (s *Stream) isRunning() bool {
+func (s *Stream[_]) isRunning() bool {
 	return s.running
 }
 
 // Stop the Stream if it's running
-func (s *Stream) Stop() error {
+func (s *Stream[_]) Stop() error {
 	s.Lock()
 	defer s.Unlock()
 	if !s.running {

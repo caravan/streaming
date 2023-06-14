@@ -2,38 +2,38 @@ package build
 
 import (
 	"github.com/caravan/essentials/topic"
+	_stream "github.com/caravan/streaming/internal/stream"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
-	"github.com/caravan/streaming/table"
-
-	_stream "github.com/caravan/streaming/internal/stream"
 )
 
-type builder struct {
-	prev  []*builder
-	build Deferred
+type builder[Msg any] struct {
+	prev  []*builder[Msg]
+	build Deferred[Msg]
 }
 
-var initial = &builder{
-	prev: []*builder{},
+func makeInitial[Msg any]() *builder[Msg] {
+	return &builder[Msg]{
+		prev: []*builder[Msg]{},
+	}
 }
 
 // Source initiates a new Builder, with its events originating in the provided
 // SourceProcessor
-func Source(p stream.SourceProcessor) Builder {
-	return initial.processor(p)
+func Source[Msg any](p stream.SourceProcessor[Msg]) Builder[Msg] {
+	return makeInitial[Msg]().processor(p)
 }
 
 // TopicSource initiates a new Builder, with its events originating in the
 // provided Topic
-func TopicSource(t topic.Topic[stream.Event]) Builder {
-	return Source(node.TopicSource(t))
+func TopicSource[Msg any](t topic.Topic[Msg]) Builder[Msg] {
+	return Source(node.TopicSource[Msg](t))
 }
 
 // Merge initiates a new Builder, with its events originating from the provided
 // Builders
-func Merge(builders ...Builder) Builder {
-	return initial.extend(func() (stream.Processor, error) {
+func Merge[Msg any](builders ...Builder[Msg]) Builder[Msg] {
+	return makeInitial[Msg]().extend(func() (stream.Processor[Msg], error) {
 		p, err := buildProcessors(builders...)
 		if err != nil {
 			return nil, err
@@ -45,10 +45,11 @@ func Merge(builders ...Builder) Builder {
 // Join initiates a new Builder, with its events originating from the provided
 // Builders, filtered by its node.BinaryPredicate, and joined by its
 // node.Joiner
-func Join(
-	l Builder, r Builder, pred node.BinaryPredicate, joiner node.Joiner,
-) Builder {
-	return initial.extend(func() (stream.Processor, error) {
+func Join[Msg any](
+	l Builder[Msg], r Builder[Msg],
+	pred node.BinaryPredicate[Msg], joiner node.Joiner[Msg],
+) Builder[Msg] {
+	return makeInitial[Msg]().extend(func() (stream.Processor[Msg], error) {
 		p, err := buildProcessors(l, r)
 		if err != nil {
 			return nil, err
@@ -57,68 +58,56 @@ func Join(
 	})
 }
 
-func (b *builder) Merge(builder ...Builder) Builder {
-	all := append([]Builder{b}, builder...)
+func (b *builder[Msg]) Merge(builder ...Builder[Msg]) Builder[Msg] {
+	all := append([]Builder[Msg]{b}, builder...)
 	return Merge(all...)
 }
 
-func (b *builder) Join(
-	r Builder, pred node.BinaryPredicate, joiner node.Joiner,
-) Builder {
-	return Join(b, r, pred, joiner)
+func (b *builder[Msg]) Join(
+	r Builder[Msg], pred node.BinaryPredicate[Msg], joiner node.Joiner[Msg],
+) Builder[Msg] {
+	return Join[Msg](b, r, pred, joiner)
 }
 
-func (b *builder) Filter(pred node.Predicate) Builder {
+func (b *builder[Msg]) Filter(pred node.Predicate[Msg]) Builder[Msg] {
 	return b.processor(node.Filter(pred))
 }
 
-func (b *builder) Map(fn node.Mapper) Builder {
+func (b *builder[Msg]) Map(fn node.Mapper[Msg]) Builder[Msg] {
 	return b.processor(node.Map(fn))
 }
 
-func (b *builder) Reduce(fn node.Reducer) Builder {
+func (b *builder[Msg]) Reduce(fn node.Reducer[Msg]) Builder[Msg] {
 	return b.processor(node.Reduce(fn))
 }
 
-func (b *builder) ReduceFrom(fn node.Reducer, e stream.Event) Builder {
+func (b *builder[Msg]) ReduceFrom(fn node.Reducer[Msg], e Msg) Builder[Msg] {
 	return b.processor(node.ReduceFrom(fn, e))
 }
 
-func (b *builder) TableLookup(
-	t table.Table, c table.ColumnName, k table.KeySelector,
-) Builder {
-	return b.extend(func() (stream.Processor, error) {
-		return node.TableLookup(t, c, k)
-	})
-}
-
-func (b *builder) Processor(p stream.Processor) Builder {
+func (b *builder[Msg]) Processor(p stream.Processor[Msg]) Builder[Msg] {
 	return b.processor(p)
 }
 
-func (b *builder) ProcessorFunc(fn stream.ProcessorFunc) Builder {
+func (b *builder[Msg]) ProcessorFunc(fn stream.ProcessorFunc[Msg]) Builder[Msg] {
 	return b.Processor(fn)
 }
 
-func (b *builder) Deferred(fn Deferred) Builder {
+func (b *builder[Msg]) Deferred(fn Deferred[Msg]) Builder[Msg] {
 	return b.extend(fn)
 }
 
-func (b *builder) Sink(p stream.SinkProcessor) TerminalBuilder {
+func (b *builder[Msg]) Sink(p stream.SinkProcessor[Msg]) TerminalBuilder[Msg] {
 	return b.processor(p)
 }
 
-func (b *builder) TopicSink(t topic.Topic[stream.Event]) TerminalBuilder {
+func (b *builder[Msg]) TopicSink(t topic.Topic[Msg]) TerminalBuilder[Msg] {
 	return b.Sink(node.TopicSink(t))
 }
 
-func (b *builder) TableSink(t table.Table) TerminalBuilder {
-	return b.Sink(node.TableSink(t))
-}
-
-func (b *builder) Build() (stream.Processor, error) {
+func (b *builder[Msg]) Build() (stream.Processor[Msg], error) {
 	in := append(b.prev, b)
-	out := make([]stream.Processor, 0, len(in))
+	out := make([]stream.Processor[Msg], 0, len(in))
 	for _, e := range in {
 		if e.build == nil {
 			continue
@@ -129,10 +118,10 @@ func (b *builder) Build() (stream.Processor, error) {
 		}
 		out = append(out, eb)
 	}
-	return node.Subprocess(out...), nil
+	return node.Subprocess[Msg](out...), nil
 }
 
-func (b *builder) Stream() (stream.Stream, error) {
+func (b *builder[_]) Stream() (stream.Stream, error) {
 	p, err := b.Build()
 	if err != nil {
 		return nil, err
@@ -140,21 +129,23 @@ func (b *builder) Stream() (stream.Stream, error) {
 	return _stream.Make(p), nil
 }
 
-func (b *builder) extend(build Deferred) *builder {
+func (b *builder[Msg]) extend(build Deferred[Msg]) *builder[Msg] {
 	res := *b
 	res.prev = append(res.prev, b)
 	res.build = build
 	return &res
 }
 
-func (b *builder) processor(p stream.Processor) *builder {
-	return b.extend(func() (stream.Processor, error) {
+func (b *builder[Msg]) processor(p stream.Processor[Msg]) *builder[Msg] {
+	return b.extend(func() (stream.Processor[Msg], error) {
 		return p, nil
 	})
 }
 
-func buildProcessors(in ...Builder) ([]stream.Processor, error) {
-	out := make([]stream.Processor, 0, len(in))
+func buildProcessors[Msg any](
+	in ...Builder[Msg],
+) ([]stream.Processor[Msg], error) {
+	out := make([]stream.Processor[Msg], 0, len(in))
 	for _, b := range in {
 		eb, err := b.Build()
 		if err != nil {

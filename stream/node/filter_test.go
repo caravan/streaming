@@ -5,22 +5,21 @@ import (
 
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/internal/topic"
-	"github.com/caravan/streaming/stream"
-	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFilter(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New()
-	outTopic := topic.New()
-	s := streaming.NewStream(
-		node.TopicSource(inTopic),
-		node.Filter(func(e stream.Event) bool {
-			return e.(int)%2 == 0
+	typed := streaming.Of[int]()
+	inTopic := topic.New[int]()
+	outTopic := topic.New[int]()
+	s := typed.NewStream(
+		typed.TopicSource(inTopic),
+		typed.Filter(func(m int) bool {
+			return m%2 == 0
 		}),
-		node.TopicSink(outTopic),
+		typed.TopicSink(outTopic),
 	)
 	as.Nil(s.Start())
 
@@ -31,11 +30,11 @@ func TestFilter(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal(0, topic.MustReceive(c))
-	as.Equal(2, topic.MustReceive(c))
-	as.Equal(4, topic.MustReceive(c))
-	as.Equal(6, topic.MustReceive(c))
-	as.Equal(8, topic.MustReceive(c))
+	as.Equal(0, <-c.Receive())
+	as.Equal(2, <-c.Receive())
+	as.Equal(4, <-c.Receive())
+	as.Equal(6, <-c.Receive())
+	as.Equal(8, <-c.Receive())
 	c.Close()
 
 	as.Nil(s.Stop())

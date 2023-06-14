@@ -10,22 +10,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func sumReducer(prev stream.Event, e stream.Event) stream.Event {
-	return prev.(int) + e.(int)
+func sumReducer(prev int, e int) int {
+	return prev + e
 }
 
 func TestReduce(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New()
-	outTopic := topic.New()
+	inTopic := topic.New[int]()
+	outTopic := topic.New[int]()
 
-	sub := node.Subprocess(
-		node.TopicSource(inTopic),
-		node.Reduce(sumReducer),
-		node.TopicSink(outTopic),
-	).(stream.StatefulProcessor)
-	s := streaming.NewStream(sub)
+	typed := streaming.Of[int]()
+	sub := typed.Subprocess(
+		typed.TopicSource(inTopic),
+		typed.Reduce(sumReducer),
+		typed.TopicSink(outTopic),
+	).(stream.StatefulProcessor[int])
+	s := typed.NewStream(sub)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
@@ -34,13 +35,13 @@ func TestReduce(t *testing.T) {
 	p.Send() <- 3
 
 	c := outTopic.NewConsumer()
-	as.Equal(3, topic.MustReceive(c))
-	as.Equal(6, topic.MustReceive(c))
+	as.Equal(3, <-c.Receive())
+	as.Equal(6, <-c.Receive())
 
 	sub.Reset()
 	p.Send() <- 4
 	p.Send() <- 5
-	as.Equal(9, topic.MustReceive(c))
+	as.Equal(9, <-c.Receive())
 
 	c.Close()
 	p.Close()
@@ -50,14 +51,15 @@ func TestReduce(t *testing.T) {
 func TestReduceFrom(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New()
-	outTopic := topic.New()
-	sub := node.Subprocess(
-		node.TopicSource(inTopic),
-		node.ReduceFrom(sumReducer, 5),
-		node.TopicSink(outTopic),
-	).(stream.StatefulProcessor)
-	s := streaming.NewStream(sub)
+	inTopic := topic.New[int]()
+	outTopic := topic.New[int]()
+	typed := streaming.Of[int]()
+	sub := typed.Subprocess(
+		typed.TopicSource(inTopic),
+		typed.ReduceFrom(sumReducer, 5),
+		typed.TopicSink(outTopic),
+	).(stream.StatefulProcessor[int])
+	s := typed.NewStream(sub)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
@@ -66,13 +68,13 @@ func TestReduceFrom(t *testing.T) {
 	p.Send() <- 3
 
 	c := outTopic.NewConsumer()
-	as.Equal(6, topic.MustReceive(c))
-	as.Equal(8, topic.MustReceive(c))
-	as.Equal(11, topic.MustReceive(c))
+	as.Equal(6, <-c.Receive())
+	as.Equal(8, <-c.Receive())
+	as.Equal(11, <-c.Receive())
 
 	sub.Reset()
 	p.Send() <- 4
-	as.Equal(9, topic.MustReceive(c))
+	as.Equal(9, <-c.Receive())
 
 	c.Close()
 	p.Close()
@@ -81,8 +83,8 @@ func TestReduceFrom(t *testing.T) {
 
 func TestReducerStateful(t *testing.T) {
 	as := assert.New(t)
-	r := node.Reduce(sumReducer)
-	s, ok := r.(stream.StatefulProcessor)
+	r := node.Reduce[int](sumReducer)
+	s, ok := r.(stream.StatefulProcessor[int])
 	as.True(ok)
 	s.Reset()
 }

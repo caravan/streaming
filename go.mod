@@ -3,7 +3,7 @@ module github.com/caravan/streaming
 go 1.18
 
 require (
-	github.com/caravan/essentials v0.0.0-20210914100610-930314e37803
+	github.com/caravan/essentials v0.0.0-20230612063209-6b2fc2a7e2dc
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/tools v0.8.0
 	honnef.co/go/tools v0.4.3

@@ -8,48 +8,48 @@ import (
 )
 
 type (
-	topicSource struct {
-		topic.Consumer[stream.Event]
+	topicSource[Msg any] struct {
+		topic.Consumer[Msg]
 	}
 
-	topicSink struct {
-		topic.Producer[stream.Event]
+	topicSink[Msg any] struct {
+		topic.Producer[Msg]
 	}
 )
 
 // TopicSource constructs a processor that receives from the provided Topic
 // every time it's invoked by the Stream
-func TopicSource(t topic.Topic[stream.Event]) stream.SourceProcessor {
-	res := &topicSource{
+func TopicSource[Msg any](t topic.Topic[Msg]) stream.SourceProcessor[Msg] {
+	res := &topicSource[Msg]{
 		Consumer: t.NewConsumer(),
 	}
-	runtime.SetFinalizer(res, func(s *topicSource) {
+	runtime.SetFinalizer(res, func(s *topicSource[Msg]) {
 		s.Close()
 	})
 	return res
 }
 
-func (*topicSource) Source() {}
+func (*topicSource[_]) Source() {}
 
-func (s *topicSource) Process(_ stream.Event, r stream.Reporter) {
+func (s *topicSource[Msg]) Process(_ Msg, r stream.Reporter[Msg]) {
 	e := <-s.Receive() // our Consumer, won't close
 	r.Result(e)
 }
 
 // TopicSink constructs a processor that sends all Events it sees to the
 // provided Topic
-func TopicSink(t topic.Topic[stream.Event]) stream.SinkProcessor {
-	res := &topicSink{
+func TopicSink[Msg any](t topic.Topic[Msg]) stream.SinkProcessor[Msg] {
+	res := &topicSink[Msg]{
 		Producer: t.NewProducer(),
 	}
-	runtime.SetFinalizer(res, func(s *topicSink) {
+	runtime.SetFinalizer(res, func(s *topicSink[Msg]) {
 		s.Close()
 	})
 	return res
 }
 
-func (*topicSink) Sink() {}
+func (*topicSink[_]) Sink() {}
 
-func (s *topicSink) Process(e stream.Event, _ stream.Reporter) {
-	s.Send() <- e
+func (s *topicSink[Msg]) Process(m Msg, _ stream.Reporter[Msg]) {
+	s.Send() <- m
 }

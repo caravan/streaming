@@ -5,25 +5,25 @@ import "github.com/caravan/streaming/stream"
 type (
 	// Reducer is the signature for a function that can perform Stream
 	// reduction. The Event that is returned will be passed downstream
-	Reducer func(stream.Event, stream.Event) stream.Event
+	Reducer[Msg any] func(Msg, Msg) Msg
 
-	reduce struct {
-		fn   Reducer
-		prev stream.Event
+	reduce[Msg any] struct {
+		fn   Reducer[Msg]
+		prev Msg
 		rest bool
 	}
 
-	reduceFrom struct {
-		fn   Reducer
-		init stream.Event
-		prev stream.Event
+	reduceFrom[Msg any] struct {
+		fn   Reducer[Msg]
+		init Msg
+		prev Msg
 	}
 )
 
 // Reduce constructs a processor that reduces the Events it sees into some form
 // of aggregated Events, based on the provided function
-func Reduce(fn Reducer) stream.Processor {
-	return &reduce{
+func Reduce[Msg any](fn Reducer[Msg]) stream.Processor[Msg] {
+	return &reduce[Msg]{
 		fn: fn,
 	}
 }
@@ -31,34 +31,35 @@ func Reduce(fn Reducer) stream.Processor {
 // ReduceFrom constructs a processor that reduces the Events it sees into some
 // form of aggregated Events, based on the provided function and an initial
 // Event
-func ReduceFrom(fn Reducer, init stream.Event) stream.Processor {
-	return &reduceFrom{
+func ReduceFrom[Msg any](fn Reducer[Msg], init Msg) stream.Processor[Msg] {
+	return &reduceFrom[Msg]{
 		fn:   fn,
 		init: init,
 		prev: init,
 	}
 }
 
-func (r *reduce) Process(e stream.Event, rep stream.Reporter) {
+func (r *reduce[Msg]) Process(m Msg, rep stream.Reporter[Msg]) {
 	if !r.rest {
 		r.rest = true
-		r.prev = e
+		r.prev = m
 		return
 	}
-	r.prev = r.fn(r.prev, e)
+	r.prev = r.fn(r.prev, m)
 	rep.Result(r.prev)
 }
 
-func (r *reduce) Reset() {
-	r.prev = nil
+func (r *reduce[Msg]) Reset() {
+	var nilMsg Msg
+	r.prev = nilMsg
 	r.rest = false
 }
 
-func (r *reduceFrom) Process(e stream.Event, rep stream.Reporter) {
-	r.prev = r.fn(r.prev, e)
+func (r *reduceFrom[Msg]) Process(m Msg, rep stream.Reporter[Msg]) {
+	r.prev = r.fn(r.prev, m)
 	rep.Result(r.prev)
 }
 
-func (r *reduceFrom) Reset() {
+func (r *reduceFrom[_]) Reset() {
 	r.prev = r.init
 }

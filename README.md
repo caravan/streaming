@@ -16,40 +16,37 @@ package main
 import (
     "fmt"
     "math/rand"
-
-    "github.com/caravan/essentials"
-	"github.com/caravan/essentials/message"
+	
     "github.com/caravan/essentials/topic"
-	"github.com/caravan/streaming/stream"    
     "github.com/caravan/streaming/stream/build"
 )
 
 func main() {
     // Create new topics with permanent retention
-    left := topic.New()
-    right := topic.New()
-    out := topic.New()
-
+    left := topic.New[int]()
+    right := topic.New[int]()
+    out := topic.New[int]()
+	
     s, _ := build.
-        TopicSource(left).
-        Filter(func(e stream.Event) bool {
+        TopicSource[int](left).
+        Filter(func(m int) bool {
             // Filter out numbers greater than or equal to 200
-            return e.(int) < 200
+            return m < 200
         }).
         Join(
             build.
-                TopicSource(right).
-                Filter(func(e stream.Event) bool {
+                TopicSource[int](right).
+                Filter(func(m int) bool {
                     // Filter out numbers less than or equal to 100
-                    return e.(int) > 100
+                    return m > 100
                 }),
-            func(l stream.Event, r stream.Event) bool {
+            func(l int, r int) bool {
                 // Only join if the left is even, and the right is odd
-                return l.(int)%2 == 0 && r.(int)%2 == 1
+                return l%2 == 0 && r%2 == 1
             },
-            func(l stream.Event, r stream.Event) stream.Event {
+            func(l int, r int) int {
                 // Join by multiplying the numbers
-                return l.(int) * r.(int)
+                return l * r
             },
         ).
         TopicSink(out).
@@ -71,7 +68,7 @@ func main() {
     c := out.NewConsumer()
     for i := 0; i < 10; i++ {
         // Display the first ten that come out
-        fmt.Println(topic.MustReceive(c))
+        fmt.Println(<-c.Receive())
     }
     c.Close()
 }
