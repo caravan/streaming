@@ -17,15 +17,15 @@ import (
     "fmt"
     "math/rand"
 	
-    "github.com/caravan/essentials/topic"
+    "github.com/caravan/essentials"
     "github.com/caravan/streaming/stream/build"
 )
 
 func main() {
     // Create new topics with permanent retention
-    left := topic.New[int]()
-    right := topic.New[int]()
-    out := topic.New[int]()
+    left := essentials.NewTopic[int]()
+    right := essentials.NewTopic[int]()
+    out := essentials.NewTopic[int]()
 	
     s, _ := build.
         TopicSource[int](left).

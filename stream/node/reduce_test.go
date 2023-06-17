@@ -3,10 +3,8 @@ package node_test
 import (
 	"testing"
 
+	"github.com/caravan/essentials"
 	"github.com/caravan/streaming"
-	"github.com/caravan/streaming/internal/topic"
-	"github.com/caravan/streaming/stream"
-	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,15 +15,16 @@ func sumReducer(prev int, e int) int {
 func TestReduce(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New[int]()
-	outTopic := topic.New[int]()
+	inTopic := essentials.NewTopic[int]()
+	outTopic := essentials.NewTopic[int]()
 
 	typed := streaming.Of[int]()
+	reduce, reset := typed.ReduceWithReset(sumReducer)
 	sub := typed.Subprocess(
 		typed.TopicSource(inTopic),
-		typed.Reduce(sumReducer),
+		reduce,
 		typed.TopicSink(outTopic),
-	).(stream.StatefulProcessor[int])
+	)
 	s := typed.NewStream(sub)
 
 	as.Nil(s.Start())
@@ -38,7 +37,7 @@ func TestReduce(t *testing.T) {
 	as.Equal(3, <-c.Receive())
 	as.Equal(6, <-c.Receive())
 
-	sub.Reset()
+	reset()
 	p.Send() <- 4
 	p.Send() <- 5
 	as.Equal(9, <-c.Receive())
@@ -51,14 +50,15 @@ func TestReduce(t *testing.T) {
 func TestReduceFrom(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New[int]()
-	outTopic := topic.New[int]()
+	inTopic := essentials.NewTopic[int]()
+	outTopic := essentials.NewTopic[int]()
 	typed := streaming.Of[int]()
+	reduce, reset := typed.ReduceFromWithReset(sumReducer, 5)
 	sub := typed.Subprocess(
 		typed.TopicSource(inTopic),
-		typed.ReduceFrom(sumReducer, 5),
+		reduce,
 		typed.TopicSink(outTopic),
-	).(stream.StatefulProcessor[int])
+	)
 	s := typed.NewStream(sub)
 
 	as.Nil(s.Start())
@@ -72,19 +72,11 @@ func TestReduceFrom(t *testing.T) {
 	as.Equal(8, <-c.Receive())
 	as.Equal(11, <-c.Receive())
 
-	sub.Reset()
+	reset()
 	p.Send() <- 4
 	as.Equal(9, <-c.Receive())
 
 	c.Close()
 	p.Close()
 	as.Nil(s.Stop())
-}
-
-func TestReducerStateful(t *testing.T) {
-	as := assert.New(t)
-	r := node.Reduce[int](sumReducer)
-	s, ok := r.(stream.StatefulProcessor[int])
-	as.True(ok)
-	s.Reset()
 }

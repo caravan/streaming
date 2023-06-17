@@ -3,16 +3,13 @@ package node
 import "github.com/caravan/streaming/stream"
 
 // Mapper is the signature for a function that can perform Stream mapping. The
-// Event that is returned will be passed downstream
-type Mapper[Msg any] func(Msg) Msg
+// message that is returned will be passed downstream
+type Mapper[From, To any] func(From) To
 
-// Map constructs a processor that maps the Events it sees into new Events
+// Map constructs a processor that maps the messages it sees into new messages
 // using the provided function
-func Map[Msg any](fn Mapper[Msg]) stream.Processor[Msg] {
-	return fn
-}
-
-// Process turns Mapper into a stream.Processor
-func (fn Mapper[Msg]) Process(m Msg, r stream.Reporter[Msg]) {
-	r.Result(fn(m))
+func Map[Msg, Res any](fn Mapper[Msg, Res]) stream.Processor[Msg, Res] {
+	return func(msg Msg, rep stream.Reporter[Res]) {
+		Forward(fn(msg), rep)
+	}
 }

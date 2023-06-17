@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/caravan/streaming/internal/topic"
+	"github.com/caravan/essentials"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/build"
 	"github.com/stretchr/testify/assert"
@@ -12,8 +12,8 @@ import (
 
 func TestPump(t *testing.T) {
 	as := assert.New(t)
-	in := topic.New[int]()
-	out := topic.New[int]()
+	in := essentials.NewTopic[int]()
+	out := essentials.NewTopic[int]()
 
 	s, err := build.TopicSource[int](in).TopicSink(out).Stream()
 	as.NotNil(s)
@@ -38,8 +38,8 @@ func TestPump(t *testing.T) {
 
 func TestFilterMapReduce(t *testing.T) {
 	as := assert.New(t)
-	in := topic.New[int]()
-	out := topic.New[int]()
+	in := essentials.NewTopic[int]()
+	out := essentials.NewTopic[int]()
 
 	s, err := build.
 		TopicSource[int](in).
@@ -79,8 +79,8 @@ func TestFilterMapReduce(t *testing.T) {
 
 func TestReduceFrom(t *testing.T) {
 	as := assert.New(t)
-	in := topic.New[int]()
-	out := topic.New[int]()
+	in := essentials.NewTopic[int]()
+	out := essentials.NewTopic[int]()
 
 	s, err := build.
 		TopicSource[int](in).
@@ -110,15 +110,15 @@ func TestReduceFrom(t *testing.T) {
 	as.Nil(s.Stop())
 }
 
-func TestProcessorFunc(t *testing.T) {
+func TestProcessor(t *testing.T) {
 	as := assert.New(t)
-	in := topic.New[int]()
-	out := topic.New[int]()
+	in := essentials.NewTopic[int]()
+	out := essentials.NewTopic[int]()
 
 	s, err := build.
 		TopicSource[int](in).
-		ProcessorFunc(func(_ int, r stream.Reporter[int]) {
-			r.Result(42)
+		Processor(func(_ int, r stream.Reporter[int]) {
+			r(42, nil)
 		}).
 		TopicSink(out).
 		Stream()
@@ -144,20 +144,20 @@ func TestProcessorFunc(t *testing.T) {
 func TestMerge(t *testing.T) {
 	as := assert.New(t)
 
-	l := topic.New[int]()
-	r := topic.New[int]()
-	out := topic.New[int]()
+	l := essentials.NewTopic[int]()
+	r := essentials.NewTopic[int]()
+	out := essentials.NewTopic[int]()
 
 	s, err := build.
 		TopicSource[int](l).
-		ProcessorFunc(func(_ int, r stream.Reporter[int]) {
-			r.Result(42)
+		Processor(func(_ int, r stream.Reporter[int]) {
+			r(42, nil)
 		}).
 		Merge(
 			build.
 				TopicSource[int](r).
-				ProcessorFunc(func(_ int, r stream.Reporter[int]) {
-					r.Result(96)
+				Processor(func(_ int, r stream.Reporter[int]) {
+					r(96, nil)
 				}),
 		).
 		TopicSink(out).
@@ -194,12 +194,12 @@ func TestMerge(t *testing.T) {
 func TestMergeBuildError(t *testing.T) {
 	as := assert.New(t)
 
-	in := topic.New[any]()
+	in := essentials.NewTopic[any]()
 
 	s, err := build.
 		Merge(
 			build.TopicSource[any](in).Deferred(
-				func() (stream.Processor[any], error) {
+				func() (stream.Processor[any, any], error) {
 					return nil, errors.New("error raised")
 				},
 			),
@@ -213,9 +213,9 @@ func TestMergeBuildError(t *testing.T) {
 func TestJoin(t *testing.T) {
 	as := assert.New(t)
 
-	l := topic.New[int]()
-	r := topic.New[int]()
-	out := topic.New[int]()
+	l := essentials.NewTopic[int]()
+	r := essentials.NewTopic[int]()
+	out := essentials.NewTopic[int]()
 
 	s, err := build.
 		TopicSource[int](l).
@@ -256,13 +256,13 @@ func TestJoin(t *testing.T) {
 func TestJoinBuildError(t *testing.T) {
 	as := assert.New(t)
 
-	l := topic.New[int]()
-	r := topic.New[int]()
+	l := essentials.NewTopic[int]()
+	r := essentials.NewTopic[int]()
 
 	s, err := build.
 		Join(
 			build.TopicSource[int](l).Deferred(
-				func() (stream.Processor[int], error) {
+				func() (stream.Processor[int, int], error) {
 					return nil, errors.New("error raised")
 				},
 			),
@@ -283,10 +283,10 @@ func TestJoinBuildError(t *testing.T) {
 func TestDeferredError(t *testing.T) {
 	as := assert.New(t)
 
-	in := topic.New[any]()
+	in := essentials.NewTopic[any]()
 	s, err := build.
 		TopicSource[any](in).
-		Deferred(func() (stream.Processor[any], error) {
+		Deferred(func() (stream.Processor[any, any], error) {
 			return nil, errors.New("error raised")
 		}).
 		Stream()

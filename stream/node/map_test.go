@@ -3,16 +3,16 @@ package node_test
 import (
 	"testing"
 
+	"github.com/caravan/essentials"
 	"github.com/caravan/streaming"
-	"github.com/caravan/streaming/internal/topic"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMap(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New[string]()
-	outTopic := topic.New[string]()
+	inTopic := essentials.NewTopic[string]()
+	outTopic := essentials.NewTopic[string]()
 	typed := streaming.Of[string]()
 	s := typed.NewStream(
 		typed.TopicSource(inTopic),

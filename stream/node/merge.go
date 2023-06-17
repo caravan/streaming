@@ -6,25 +6,21 @@ import (
 	"github.com/caravan/streaming/stream"
 )
 
-type merge[Msg any] []stream.Processor[Msg]
-
 // Merge forwards Events from multiple Processors to the same Reporter
-func Merge[Msg any](p ...stream.Processor[Msg]) stream.SourceProcessor[Msg] {
-	return merge[Msg](p)
-}
+func Merge[Msg, Res any](
+	p ...stream.Processor[Msg, Res],
+) stream.Processor[Msg, Res] {
+	return func(msg Msg, rep stream.Reporter[Res]) {
+		var group sync.WaitGroup
+		group.Add(len(p))
 
-func (m merge[_]) Source() {}
+		for _, fn := range p {
+			go func(fn stream.Processor[Msg, Res]) {
+				fn(msg, rep)
+				group.Done()
+			}(fn)
+		}
 
-func (m merge[Msg]) Process(msg Msg, r stream.Reporter[Msg]) {
-	var group sync.WaitGroup
-	group.Add(len(m))
-
-	for _, p := range m {
-		go func(p stream.Processor[Msg]) {
-			p.Process(msg, r)
-			group.Done()
-		}(p)
+		group.Wait()
 	}
-
-	group.Wait()
 }

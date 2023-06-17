@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/message"
 
 	"github.com/caravan/streaming"
-	"github.com/caravan/streaming/internal/topic"
 	"github.com/caravan/streaming/stream"
-	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,24 +21,18 @@ func joinSum(l int, r int) int {
 	return l + r
 }
 
-func makeJoinError(err error) stream.Processor[int] {
-	return stream.ProcessorFunc[int](
-		func(_ int, r stream.Reporter[int]) {
-			r.Error(err)
-		},
-	)
-}
-
-func TestJoinSource(t *testing.T) {
-	node.Join[int](nil, nil, nil, nil).Source()
+func makeJoinError(err error) stream.Processor[int, int] {
+	return func(_ int, r stream.Reporter[int]) {
+		r(0, err)
+	}
 }
 
 func TestJoin(t *testing.T) {
 	as := assert.New(t)
 
-	leftTopic := topic.New[int]()
-	rightTopic := topic.New[int]()
-	outTopic := topic.New[int]()
+	leftTopic := essentials.NewTopic[int]()
+	rightTopic := essentials.NewTopic[int]()
+	outTopic := essentials.NewTopic[int]()
 	typed := streaming.Of[int]()
 	s := typed.NewStream(
 		typed.Join(
@@ -79,8 +72,8 @@ func TestJoin(t *testing.T) {
 func TestJoinErrored(t *testing.T) {
 	as := assert.New(t)
 
-	inTopic := topic.New[int]()
-	outTopic := topic.New[int]()
+	inTopic := essentials.NewTopic[int]()
+	outTopic := essentials.NewTopic[int]()
 	typed := streaming.Of[int]()
 	s := typed.NewStream(
 		typed.Join(

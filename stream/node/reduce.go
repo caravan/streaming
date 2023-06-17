@@ -5,61 +5,51 @@ import "github.com/caravan/streaming/stream"
 type (
 	// Reducer is the signature for a function that can perform Stream
 	// reduction. The Event that is returned will be passed downstream
-	Reducer[Msg any] func(Msg, Msg) Msg
+	Reducer[Res, Msg any] func(Res, Msg) Res
 
-	reduce[Msg any] struct {
-		fn   Reducer[Msg]
-		prev Msg
-		rest bool
-	}
-
-	reduceFrom[Msg any] struct {
-		fn   Reducer[Msg]
-		init Msg
-		prev Msg
-	}
+	// Reset allows a Reducer to be reset to its initial state
+	Reset func()
 )
 
 // Reduce constructs a processor that reduces the Events it sees into some form
 // of aggregated Events, based on the provided function
-func Reduce[Msg any](fn Reducer[Msg]) stream.Processor[Msg] {
-	return &reduce[Msg]{
-		fn: fn,
+func Reduce[Msg, Res any](
+	fn Reducer[Res, Msg],
+) (stream.Processor[Msg, Res], Reset) {
+	var res Res
+	var reduce func(msg Msg, rep stream.Reporter[Res])
+
+	initReduce := func(msg Msg, _ stream.Reporter[Res]) {
+		var zero Res
+		res = fn(zero, msg)
+		reduce = func(msg Msg, rep stream.Reporter[Res]) {
+			res = fn(res, msg)
+			Forward(res, rep)
+		}
 	}
+	reduce = initReduce
+
+	reset := func() {
+		reduce = initReduce
+	}
+
+	return func(msg Msg, rep stream.Reporter[Res]) {
+		reduce(msg, rep)
+	}, reset
 }
 
 // ReduceFrom constructs a processor that reduces the Events it sees into some
 // form of aggregated Events, based on the provided function and an initial
 // Event
-func ReduceFrom[Msg any](fn Reducer[Msg], init Msg) stream.Processor[Msg] {
-	return &reduceFrom[Msg]{
-		fn:   fn,
-		init: init,
-		prev: init,
+func ReduceFrom[Msg, Res any](
+	fn Reducer[Res, Msg], init Res,
+) (stream.Processor[Msg, Res], Reset) {
+	res := init
+	reset := func() {
+		res = init
 	}
-}
-
-func (r *reduce[Msg]) Process(m Msg, rep stream.Reporter[Msg]) {
-	if !r.rest {
-		r.rest = true
-		r.prev = m
-		return
-	}
-	r.prev = r.fn(r.prev, m)
-	rep.Result(r.prev)
-}
-
-func (r *reduce[Msg]) Reset() {
-	var nilMsg Msg
-	r.prev = nilMsg
-	r.rest = false
-}
-
-func (r *reduceFrom[Msg]) Process(m Msg, rep stream.Reporter[Msg]) {
-	r.prev = r.fn(r.prev, m)
-	rep.Result(r.prev)
-}
-
-func (r *reduceFrom[_]) Reset() {
-	r.prev = r.init
+	return func(msg Msg, rep stream.Reporter[Res]) {
+		res = fn(res, msg)
+		Forward(res, rep)
+	}, reset
 }

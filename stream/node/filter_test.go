@@ -3,8 +3,8 @@ package node_test
 import (
 	"testing"
 
+	"github.com/caravan/essentials"
 	"github.com/caravan/streaming"
-	"github.com/caravan/streaming/internal/topic"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,8 +12,8 @@ func TestFilter(t *testing.T) {
 	as := assert.New(t)
 
 	typed := streaming.Of[int]()
-	inTopic := topic.New[int]()
-	outTopic := topic.New[int]()
+	inTopic := essentials.NewTopic[int]()
+	outTopic := essentials.NewTopic[int]()
 	s := typed.NewStream(
 		typed.TopicSource(inTopic),
 		typed.Filter(func(m int) bool {

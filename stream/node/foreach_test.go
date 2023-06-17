@@ -4,23 +4,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/caravan/essentials"
 	"github.com/caravan/streaming"
-	"github.com/caravan/streaming/internal/topic"
-	"github.com/caravan/streaming/stream"
-	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestForEachIsSink(t *testing.T) {
-	sink := node.ForEach[any](nil).(stream.SinkProcessor[any])
-	sink.Sink()
-}
 
 func TestForEach(t *testing.T) {
 	as := assert.New(t)
 
 	sum := 0
-	inTopic := topic.New[int]()
+	inTopic := essentials.NewTopic[int]()
 	typed := streaming.Of[int]()
 	s := typed.NewStream(
 		typed.TopicSource(inTopic),
