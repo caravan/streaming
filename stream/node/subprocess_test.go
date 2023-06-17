@@ -17,8 +17,8 @@ func TestSubprocessError(t *testing.T) {
 
 	s := node.Subprocess[any](
 		node.Forward[any],
-		func(_ any, r stream.Reporter[any]) {
-			r(nil, errors.New("explosion"))
+		func(_ any, rep stream.Reporter[any]) {
+			rep(nil, errors.New("explosion"))
 		},
 	)
 

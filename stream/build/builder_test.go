@@ -43,11 +43,11 @@ func TestFilterMapReduce(t *testing.T) {
 
 	s, err := build.
 		TopicSource[int](in).
-		Filter(func(e int) bool {
-			return e%2 == 0
+		Filter(func(i int) bool {
+			return i%2 == 0
 		}).
-		Map(func(e int) int {
-			return e * 3
+		Map(func(i int) int {
+			return i * 3
 		}).
 		Reduce(func(l int, r int) int {
 			return l + r
@@ -117,8 +117,8 @@ func TestProcessor(t *testing.T) {
 
 	s, err := build.
 		TopicSource[int](in).
-		Processor(func(_ int, r stream.Reporter[int]) {
-			r(42, nil)
+		Processor(func(_ int, rep stream.Reporter[int]) {
+			rep(42, nil)
 		}).
 		TopicSink(out).
 		Stream()
@@ -150,14 +150,14 @@ func TestMerge(t *testing.T) {
 
 	s, err := build.
 		TopicSource[int](l).
-		Processor(func(_ int, r stream.Reporter[int]) {
-			r(42, nil)
+		Processor(func(_ int, rep stream.Reporter[int]) {
+			rep(42, nil)
 		}).
 		Merge(
 			build.
 				TopicSource[int](r).
-				Processor(func(_ int, r stream.Reporter[int]) {
-					r(96, nil)
+				Processor(func(_ int, rep stream.Reporter[int]) {
+					rep(96, nil)
 				}),
 		).
 		TopicSink(out).
@@ -176,8 +176,8 @@ func TestMerge(t *testing.T) {
 	lp.Send() <- 10001
 	rp.Send() <- 1234
 
-	is42Or96 := func(e int) bool {
-		return e == 42 || e == 96
+	is42Or96 := func(i int) bool {
+		return i == 42 || i == 96
 	}
 
 	as.True(is42Or96(<-c.Receive()))

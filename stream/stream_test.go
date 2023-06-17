@@ -47,8 +47,8 @@ func TestStreamError(t *testing.T) {
 	as := assert.New(t)
 	as.Equal(stream.Stop{}.Error(), stream.ErrStopRequested)
 	s := streaming.NewStream[any](
-		func(_ any, r stream.Reporter[any]) {
-			r(nil, stream.Stop{})
+		func(_ any, rep stream.Reporter[any]) {
+			rep(nil, stream.Stop{})
 		},
 	)
 	as.Nil(s.Start())

@@ -22,8 +22,8 @@ func joinSum(l int, r int) int {
 }
 
 func makeJoinError(err error) stream.Processor[int, int] {
-	return func(_ int, r stream.Reporter[int]) {
-		r(0, err)
+	return func(_ int, rep stream.Reporter[int]) {
+		rep(0, err)
 	}
 }
 

@@ -8,7 +8,7 @@ import (
 
 type (
 	Typed[Msg any] interface {
-		NewStream(p ...stream.Processor[Msg, Msg]) stream.Stream
+		NewStream(...stream.Processor[Msg, Msg]) stream.Stream
 		Filter(node.Predicate[Msg]) stream.Processor[Msg, Msg]
 		ForEach(node.ForEachFunc[Msg]) stream.Processor[Msg, Msg]
 		Join(
@@ -18,7 +18,7 @@ type (
 			joiner node.BinaryOperator[Msg, Msg, Msg],
 		) stream.Processor[Msg, Msg]
 		Map(node.Mapper[Msg, Msg]) stream.Processor[Msg, Msg]
-		Merge(p ...stream.Processor[Msg, Msg]) stream.Processor[Msg, Msg]
+		Merge(...stream.Processor[Msg, Msg]) stream.Processor[Msg, Msg]
 		ReduceWithReset(
 			node.Reducer[Msg, Msg],
 		) (stream.Processor[Msg, Msg], node.Reset)
@@ -29,7 +29,7 @@ type (
 		ReduceFrom(
 			node.Reducer[Msg, Msg], Msg,
 		) stream.Processor[Msg, Msg]
-		Subprocess(p ...stream.Processor[Msg, Msg]) stream.Processor[Msg, Msg]
+		Subprocess(...stream.Processor[Msg, Msg]) stream.Processor[Msg, Msg]
 		TopicSource(topic.Topic[Msg]) stream.Processor[Msg, Msg]
 		TopicSink(topic.Topic[Msg]) stream.Processor[Msg, Msg]
 	}

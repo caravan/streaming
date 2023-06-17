@@ -16,8 +16,8 @@ func TestMap(t *testing.T) {
 	typed := streaming.Of[string]()
 	s := typed.NewStream(
 		typed.TopicSource(inTopic),
-		typed.Map(func(e string) string {
-			return "Hello, " + e + "!"
+		typed.Map(func(s string) string {
+			return "Hello, " + s + "!"
 		}),
 		typed.TopicSink(outTopic),
 	)

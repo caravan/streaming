@@ -13,14 +13,14 @@ import (
 func TestMerge(t *testing.T) {
 	as := assert.New(t)
 
-	add1 := func(e int, r stream.Reporter[int]) {
-		r(e+1, nil)
+	add1 := func(i int, rep stream.Reporter[int]) {
+		rep(i+1, nil)
 	}
 
-	times2 := func(e int, r stream.Reporter[int]) {
+	times2 := func(i int, rep stream.Reporter[int]) {
 		// Multiplication is slower
 		time.Sleep(50 * time.Millisecond)
-		r(e*2, nil)
+		rep(i*2, nil)
 	}
 
 	inTopic := essentials.NewTopic[int]()
