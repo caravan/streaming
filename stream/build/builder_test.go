@@ -3,10 +3,15 @@ package build_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/caravan/essentials"
+	"github.com/caravan/essentials/id"
+	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/build"
+	"github.com/caravan/streaming/table"
+	"github.com/caravan/streaming/table/column"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -251,6 +256,91 @@ func TestJoin(t *testing.T) {
 	rp.Close()
 	c.Close()
 	as.Nil(s.Stop())
+}
+
+type row struct {
+	id   id.ID
+	name string
+	age  int
+}
+
+func TestTableSink(t *testing.T) {
+	as := assert.New(t)
+
+	in := essentials.NewTopic[any]()
+	out := streaming.NewTable[any](
+		func(a any) (table.Key, error) {
+			return a.(*row).id, nil
+		},
+		column.Make("age", func(a any) (any, error) {
+			return a.(*row).age, nil
+		}),
+	)
+
+	s, err := build.
+		TopicSource(in).
+		TableSink(out).
+		Stream()
+
+	as.NotNil(s)
+	as.Nil(err)
+	as.Nil(s.Start())
+
+	p := in.NewProducer()
+	billID := id.New()
+	p.Send() <- &row{
+		id:   billID,
+		name: "bill",
+		age:  42,
+	}
+	p.Close()
+
+	time.Sleep(50 * time.Millisecond)
+	sel, err := out.Selector("age")
+	as.NotNil(sel)
+	as.Nil(err)
+
+	res, err := sel(billID)
+	as.Nil(err)
+	as.Equal(42, res[0])
+}
+
+func TestTableLookup(t *testing.T) {
+	as := assert.New(t)
+
+	theID := id.New()
+	ks := func(_ any) (table.Key, error) {
+		return theID, nil
+	}
+
+	in := essentials.NewTopic[any]()
+	tbl := streaming.NewTable[any](ks,
+		column.Make("*", func(a any) (any, error) {
+			return a, nil
+		}),
+	)
+	res, err := tbl.Update("hello there")
+	as.Equal(table.Relation[any]{"hello there"}, res)
+	as.Nil(err)
+	out := essentials.NewTopic[any]()
+
+	s, err := build.
+		TopicSource(in).
+		TableLookup(tbl, "*", ks).
+		TopicSink(out).
+		Stream()
+
+	as.NotNil(s)
+	as.Nil(err)
+	as.Nil(s.Start())
+
+	p := in.NewProducer()
+	p.Send() <- "anything"
+	p.Close()
+
+	c := out.NewConsumer()
+	as.Equal("hello there", <-c.Receive())
+	c.Close()
 }
 
 func TestJoinBuildError(t *testing.T) {

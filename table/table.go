@@ -49,8 +49,8 @@ func (t *table[Msg, Value]) Columns() []Column[Msg, Value] {
 	return t.cols
 }
 
-// Update adds or overwrites an Event in the Table. The Event is associated
-// with a Key that is selected from the Event using the Table's KeySelector
+// Update adds or overwrites an message in the Table. The message is associated
+// with a Key that is selected from the message using the Table's KeySelector
 func (t *table[Msg, Value]) Update(msg Msg) (Relation[Value], error) {
 	t.Lock()
 	defer t.Unlock()

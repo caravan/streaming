@@ -37,7 +37,7 @@ func (s *stream[Msg, Res]) Start() error {
 	s.Unlock()
 
 	r := func(_ Res, e error) {
-		if _, ok := e.(Stop); ok && e != nil {
+		if _, ok := e.(Stop); ok {
 			s.Lock()
 			s.running = false
 			s.Unlock()

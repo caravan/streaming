@@ -8,10 +8,10 @@ type (
 		Start() error
 
 		// Stop instructs the Stream to stop processing as soon as the
-		// current Event has completed
+		// current message has completed
 		Stop() error
 
-		// IsRunning returns whether the Stream is processing Events in the
+		// IsRunning returns whether the Stream is processing messages in the
 		// background
 		IsRunning() bool
 	}

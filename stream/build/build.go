@@ -4,6 +4,7 @@ import (
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
+	"github.com/caravan/streaming/table"
 )
 
 type (
@@ -11,11 +12,11 @@ type (
 	Builder[Msg any] interface {
 		TerminalBuilder[Msg]
 
-		// Merge forwards the events being produced by this Builder along
+		// Merge forwards the messages being produced by this Builder along
 		// with the ones being produced by the provided Builders
 		Merge(...Builder[Msg]) Builder[Msg]
 
-		// Join attempts to join the events being produced by this Builder
+		// Join attempts to join the messages being produced by this Builder
 		// with another, using the provided BinaryOperator, but only if the
 		// BinaryPredicate is satisfied
 		Join(
@@ -24,23 +25,31 @@ type (
 			node.BinaryOperator[Msg, Msg, Msg],
 		) Builder[Msg]
 
-		// Filter forwards events being produced by this Builder that
+		// Filter forwards messages being produced by this Builder that
 		// match the provided Predicate
 		Filter(node.Predicate[Msg]) Builder[Msg]
 
-		// Map forwards events being produced by this Builder that are
+		// Map forwards messages being produced by this Builder that are
 		// transformed based on the provided Mapper function
 		Map(node.Mapper[Msg, Msg]) Builder[Msg]
 
-		// Reduce forwards events from this Builder that are the result
-		// of reducing the Events it sees into some form of aggregated
-		// Events, based on the provided Reducer
+		// Reduce forwards messages from this Builder that are the result
+		// of reducing the messages it sees into some form of aggregated
+		// messages, based on the provided Reducer
 		Reduce(node.Reducer[Msg, Msg]) Builder[Msg]
 
-		// ReduceFrom provides the same forwarding of events as Reduce,
-		// but uses the provided Event as the starting value for the
+		// ReduceFrom provides the same forwarding of messages as Reduce,
+		// but uses the provided message as the starting value for the
 		// underlying reduction
 		ReduceFrom(node.Reducer[Msg, Msg], Msg) Builder[Msg]
+
+		// TableLookup retrieves a Key of the messages from this Builder,
+		// and uses that key to perform a lookup on the provided Table.
+		// If an message is retrieved from that table, the value in the
+		// specified column is forwarded
+		TableLookup(
+			table.Table[Msg, Msg], table.ColumnName, table.KeySelector[Msg],
+		) Builder[Msg]
 
 		// Processor adds the specified Processor to this Builder
 		Processor(stream.Processor[Msg, Msg]) Builder[Msg]
@@ -57,9 +66,14 @@ type (
 		Sink(stream.Processor[Msg, Msg]) TerminalBuilder[Msg]
 
 		// TopicSink adds a SinkProcessor to this Builder that is based
-		// on the specified Topic. So all events that this Stream produces
+		// on the specified Topic. So all messages that this Stream produces
 		// will end up in that Topic. This is a terminal in the graph
 		TopicSink(topic.Topic[Msg]) TerminalBuilder[Msg]
+
+		// TableSink adds a SinkProcessor to this Builder that is based
+		// on the specified Table. So all messages that this Stream produces
+		// will end up in that Table. This is a terminal in the graph
+		TableSink(table.Table[Msg, Msg]) TerminalBuilder[Msg]
 	}
 
 	// TerminalBuilder is a sub-portion of the Builder interface that is

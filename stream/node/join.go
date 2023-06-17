@@ -8,7 +8,7 @@ import (
 
 type (
 	// BinaryPredicate is the signature for a function that can perform
-	// Stream joining. Returning true will bind the Events in the Stream
+	// Stream joining. Returning true will bind the messages in the Stream
 	BinaryPredicate[Left, Right any] func(Left, Right) bool
 
 	// BinaryOperator combines the left and right messages into some new result
@@ -28,7 +28,7 @@ const (
 
 // Join accepts two Processors for the sake of joining their results based on a
 // provided BinaryPredicate and BinaryOperator. If the predicate fails, nothing
-// is forwarded, otherwise the two processed Events are combined using the join
+// is forwarded, otherwise the two processed messages are combined using the join
 // function, and the result is forwarded
 func Join[Msg, Left, Right, Res any](
 	left stream.Processor[Msg, Left],

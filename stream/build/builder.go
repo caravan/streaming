@@ -4,6 +4,7 @@ import (
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
+	"github.com/caravan/streaming/table"
 )
 
 type builder[Msg any] struct {
@@ -17,13 +18,13 @@ func makeInitial[Msg any]() *builder[Msg] {
 	}
 }
 
-// Source initiates a new Builder, with its events originating in the provided
+// Source initiates a new Builder, with its messages originating in the provided
 // SourceProcessor
 func Source[Msg any](p stream.Processor[Msg, Msg]) Builder[Msg] {
 	return makeInitial[Msg]().processor(p)
 }
 
-// TopicSource initiates a new Builder, with its events originating in the
+// TopicSource initiates a new Builder, with its messages originating in the
 // provided Topic
 func TopicSource[Msg any](t topic.Topic[Msg]) Builder[Msg] {
 	fn := node.TopicSource[Msg](t)
@@ -32,7 +33,7 @@ func TopicSource[Msg any](t topic.Topic[Msg]) Builder[Msg] {
 	})
 }
 
-// Merge initiates a new Builder, with its events originating from the provided
+// Merge initiates a new Builder, with its messages originating from the provided
 // Builders
 func Merge[Msg any](builders ...Builder[Msg]) Builder[Msg] {
 	return makeInitial[Msg]().extend(
@@ -46,7 +47,7 @@ func Merge[Msg any](builders ...Builder[Msg]) Builder[Msg] {
 	)
 }
 
-// Join initiates a new Builder, with its events originating from the provided
+// Join initiates a new Builder, with its messages originating from the provided
 // Builders, filtered by its node.BinaryPredicate, and joined by its
 // node.BinaryOperator
 func Join[Msg any](
@@ -97,6 +98,14 @@ func (b *builder[Msg]) ReduceFrom(
 	return b.processor(p)
 }
 
+func (b *builder[Msg]) TableLookup(
+	t table.Table[Msg, Msg], c table.ColumnName, k table.KeySelector[Msg],
+) Builder[Msg] {
+	return b.extend(func() (stream.Processor[Msg, Msg], error) {
+		return node.TableLookup[Msg, Msg](t, c, k)
+	})
+}
+
 func (b *builder[Msg]) Processor(p stream.Processor[Msg, Msg]) Builder[Msg] {
 	return b.processor(p)
 }
@@ -111,6 +120,10 @@ func (b *builder[Msg]) Sink(p stream.Processor[Msg, Msg]) TerminalBuilder[Msg] {
 
 func (b *builder[Msg]) TopicSink(t topic.Topic[Msg]) TerminalBuilder[Msg] {
 	return b.Sink(node.TopicSink(t))
+}
+
+func (b *builder[Msg]) TableSink(t table.Table[Msg, Msg]) TerminalBuilder[Msg] {
+	return b.Sink(node.TableSink(t))
 }
 
 func (b *builder[Msg]) Build() (stream.Processor[Msg, Msg], error) {

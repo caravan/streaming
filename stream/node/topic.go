@@ -16,7 +16,7 @@ func TopicSource[Msg any](t topic.Topic[Msg]) stream.Processor[any, Msg] {
 	}
 }
 
-// TopicSink constructs a processor that sends all Events it sees to the
+// TopicSink constructs a processor that sends all messages it sees to the
 // provided Topic
 func TopicSink[Msg any](t topic.Topic[Msg]) stream.Processor[Msg, Msg] {
 	p := t.NewProducer()

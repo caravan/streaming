@@ -6,7 +6,7 @@ import (
 	"github.com/caravan/streaming/stream"
 )
 
-// Merge forwards Events from multiple Processors to the same Reporter
+// Merge forwards messages from multiple Processors to the same Reporter
 func Merge[Msg, Res any](
 	p ...stream.Processor[Msg, Res],
 ) stream.Processor[Msg, Res] {

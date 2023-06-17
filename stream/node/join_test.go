@@ -7,7 +7,6 @@ import (
 
 	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/message"
-
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/stretchr/testify/assert"
