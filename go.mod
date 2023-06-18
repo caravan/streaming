@@ -1,6 +1,6 @@
 module github.com/caravan/streaming
 
-go 1.18
+go 1.19
 
 require (
 	github.com/caravan/essentials v0.0.0-20230612063209-6b2fc2a7e2dc
