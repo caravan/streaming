@@ -7,6 +7,8 @@ import (
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/stretchr/testify/assert"
+
+	_stream "github.com/caravan/streaming/internal/stream"
 )
 
 func TestStreamCreate(t *testing.T) {
@@ -14,7 +16,7 @@ func TestStreamCreate(t *testing.T) {
 
 	s := streaming.NewStream[any]()
 	as.NotNil(s)
-	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
+	as.EqualError(s.Stop(), _stream.ErrAlreadyStopped)
 }
 
 func TestStreamStart(t *testing.T) {
@@ -22,14 +24,14 @@ func TestStreamStart(t *testing.T) {
 
 	s := streaming.NewStream[any]()
 	as.Nil(s.Start())
-	as.EqualError(s.Start(), stream.ErrAlreadyStarted)
+	as.EqualError(s.Start(), _stream.ErrAlreadyStarted)
 }
 
 func TestStreamStop(t *testing.T) {
 	as := assert.New(t)
 
 	s := streaming.NewStream[any]()
-	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
+	as.EqualError(s.Stop(), _stream.ErrAlreadyStopped)
 }
 
 func TestStreamStartStop(t *testing.T) {
@@ -37,10 +39,10 @@ func TestStreamStartStop(t *testing.T) {
 
 	s := streaming.NewStream[any]()
 	as.Nil(s.Start())
-	as.EqualError(s.Start(), stream.ErrAlreadyStarted)
+	as.EqualError(s.Start(), _stream.ErrAlreadyStarted)
 
 	as.Nil(s.Stop())
-	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
+	as.EqualError(s.Stop(), _stream.ErrAlreadyStopped)
 }
 
 func TestStreamError(t *testing.T) {
@@ -55,7 +57,7 @@ func TestStreamError(t *testing.T) {
 	done := make(chan bool)
 	go func() {
 		time.Sleep(500 * time.Millisecond)
-		as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
+		as.EqualError(s.Stop(), _stream.ErrAlreadyStopped)
 		done <- true
 	}()
 	<-done

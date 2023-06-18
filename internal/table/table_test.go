@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	table2 "github.com/caravan/streaming/internal/table"
+
 	"github.com/caravan/essentials/id"
 	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
@@ -20,7 +22,7 @@ type tableRow struct {
 func TestTable(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := table.Make[*tableRow, any](
+	tbl := table2.Make[*tableRow, any](
 		func(e *tableRow) (table.Key, error) {
 			return e.key, nil
 		},
@@ -68,13 +70,13 @@ func TestTable(t *testing.T) {
 	missing := id.New()
 	res, err = sel(missing)
 	as.Nil(res)
-	as.EqualError(err, fmt.Sprintf(table.ErrKeyNotFound, missing))
+	as.EqualError(err, fmt.Sprintf(table2.ErrKeyNotFound, missing))
 }
 
 func TestMissingColumn(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := table.Make[*tableRow, any](
+	tbl := table2.Make[*tableRow, any](
 		func(r *tableRow) (table.Key, error) {
 			return r.key, nil
 		},
@@ -82,13 +84,13 @@ func TestMissingColumn(t *testing.T) {
 
 	sel, err := tbl.Selector("not-found")
 	as.Nil(sel)
-	as.EqualError(err, fmt.Sprintf(table.ErrColumnNotFound, "not-found"))
+	as.EqualError(err, fmt.Sprintf(table2.ErrColumnNotFound, "not-found"))
 }
 
 func TestBadSelectors(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := table.Make[*tableRow, any](
+	tbl := table2.Make[*tableRow, any](
 		func(r *tableRow) (table.Key, error) {
 			if r == nil || r.key == id.Nil {
 				return id.Nil, errors.New("key-error")

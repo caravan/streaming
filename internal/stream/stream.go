@@ -3,12 +3,14 @@ package stream
 import (
 	"errors"
 	"sync"
+
+	_stream "github.com/caravan/streaming/stream"
 )
 
 // stream is the internal implementation of a stream
 type stream[Msg, Res any] struct {
 	sync.Mutex
-	root    Processor[Msg, Res]
+	root    _stream.Processor[Msg, Res]
 	running bool
 }
 
@@ -16,11 +18,10 @@ type stream[Msg, Res any] struct {
 const (
 	ErrAlreadyStarted = "stream already running"
 	ErrAlreadyStopped = "stream already stopped"
-	ErrStopRequested  = "stream stop requested"
 )
 
 // Make builds a stream
-func Make[Msg, Res any](p Processor[Msg, Res]) Stream {
+func Make[Msg, Res any](p _stream.Processor[Msg, Res]) _stream.Stream {
 	return &stream[Msg, Res]{
 		root: p,
 	}
@@ -37,7 +38,7 @@ func (s *stream[Msg, Res]) Start() error {
 	s.Unlock()
 
 	r := func(_ Res, e error) {
-		if _, ok := e.(Stop); ok {
+		if _, ok := e.(_stream.Stop); ok {
 			s.Lock()
 			s.running = false
 			s.Unlock()
@@ -73,8 +74,4 @@ func (s *stream[_, _]) Stop() error {
 	}
 	s.running = false
 	return nil
-}
-
-func (Stop) Error() string {
-	return ErrStopRequested
 }

@@ -25,3 +25,9 @@ type (
 	// stop operating. This should only be used in exceptional cases
 	Stop struct{}
 )
+
+const ErrStopRequested = "stream stop requested"
+
+func (Stop) Error() string {
+	return ErrStopRequested
+}

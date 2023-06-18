@@ -5,6 +5,8 @@ import (
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/caravan/streaming/table"
+
+	_stream "github.com/caravan/streaming/internal/stream"
 )
 
 type builder[Msg any] struct {
@@ -147,7 +149,7 @@ func (b *builder[_]) Stream() (stream.Stream, error) {
 	if err != nil {
 		return nil, err
 	}
-	return stream.Make(p), nil
+	return _stream.Make(p), nil
 }
 
 func (b *builder[Msg]) extend(build Deferred[Msg]) *builder[Msg] {

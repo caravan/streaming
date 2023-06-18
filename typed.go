@@ -4,6 +4,8 @@ import (
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
+
+	_stream "github.com/caravan/streaming/internal/stream"
 )
 
 type (
@@ -42,7 +44,7 @@ func Of[Msg any]() Typed[Msg] {
 }
 
 func (t typed[Msg]) NewStream(p ...stream.Processor[Msg, Msg]) stream.Stream {
-	return stream.Make[Msg, Msg](
+	return _stream.Make[Msg, Msg](
 		node.Subprocess(p...),
 	)
 }
