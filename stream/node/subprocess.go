@@ -12,8 +12,8 @@ func Subprocess[Msg any](
 	case 1:
 		return p[0]
 	case 2:
-		return stream.Combine[Msg, Msg](p[0], p[1])
+		return Combine[Msg, Msg](p[0], p[1])
 	default:
-		return stream.Combine[Msg, Msg](p[0], Subprocess(p[1:]...))
+		return Combine[Msg, Msg](p[0], Subprocess(p[1:]...))
 	}
 }
