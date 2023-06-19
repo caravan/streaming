@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"testing"
 
-	table2 "github.com/caravan/streaming/internal/table"
-
 	"github.com/caravan/essentials/id"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
 	"github.com/stretchr/testify/assert"
+
+	_table "github.com/caravan/streaming/internal/table"
 )
 
 func TestTableLookup(t *testing.T) {
 	as := assert.New(t)
 
 	theID := id.New()
-	tbl := table2.Make[string, string](
+	tbl := _table.Make[string, string](
 		func(_ string) (table.Key, error) {
 			return theID, nil
 		},
@@ -47,21 +47,21 @@ func TestTableLookup(t *testing.T) {
 func TestLookupCreateError(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := table2.Make[any, any](nil)
+	tbl := _table.Make[any, any](nil)
 	lookup, err := node.TableLookup(tbl, "missing",
 		func(_ any) (table.Key, error) {
 			return id.Nil, nil
 		},
 	)
 	as.Nil(lookup)
-	as.EqualError(err, fmt.Sprintf(table2.ErrColumnNotFound, "missing"))
+	as.EqualError(err, fmt.Sprintf(_table.ErrColumnNotFound, "missing"))
 }
 
 func TestLookupProcessError(t *testing.T) {
 	as := assert.New(t)
 
 	theKey := id.New()
-	tbl := table2.Make[any, any](
+	tbl := _table.Make[any, any](
 		func(_ any) (table.Key, error) {
 			return theKey, nil
 		},
@@ -89,6 +89,6 @@ func TestLookupProcessError(t *testing.T) {
 
 	lookup("missing", func(a any, err error) {
 		as.Nil(a)
-		as.EqualError(err, fmt.Sprintf(table2.ErrKeyNotFound, theKey))
+		as.EqualError(err, fmt.Sprintf(_table.ErrKeyNotFound, theKey))
 	})
 }

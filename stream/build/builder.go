@@ -35,8 +35,8 @@ func TopicSource[Msg any](t topic.Topic[Msg]) Builder[Msg] {
 	})
 }
 
-// Merge initiates a new Builder, with its messages originating from the provided
-// Builders
+// Merge initiates a new Builder, with its messages originating from the
+// provided Builders
 func Merge[Msg any](builders ...Builder[Msg]) Builder[Msg] {
 	return makeInitial[Msg]().extend(
 		func() (stream.Processor[Msg, Msg], error) {
@@ -49,8 +49,8 @@ func Merge[Msg any](builders ...Builder[Msg]) Builder[Msg] {
 	)
 }
 
-// Join initiates a new Builder, with its messages originating from the provided
-// Builders, filtered by its node.BinaryPredicate, and joined by its
+// Join initiates a new Builder, with its messages originating from the
+// provided Builders, filtered by its node.BinaryPredicate, and joined by its
 // node.BinaryOperator
 func Join[Msg any](
 	l Builder[Msg], r Builder[Msg],

@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"sync"
 
-	table2 "github.com/caravan/streaming/table"
+	_table "github.com/caravan/streaming/table"
 )
 
 type (
 	// Table is the internal implementation of a Table
 	table[Msg, Value any] struct {
 		sync.RWMutex
-		key       table2.KeySelector[Msg]
-		cols      []table2.Column[Msg, Value]
-		selectors []table2.Selector[Msg, Value]
+		key       _table.KeySelector[Msg]
+		cols      []_table.Column[Msg, Value]
+		selectors []_table.Selector[Msg, Value]
 		lookups   columnIndexes
 		rows      tableRows[Value]
 	}
 
-	columnIndexes        map[table2.ColumnName]int
-	tableRows[Value any] map[table2.Key]table2.Relation[Value]
+	columnIndexes        map[_table.ColumnName]int
+	tableRows[Value any] map[_table.Key]_table.Relation[Value]
 )
 
 // Error messages
@@ -30,8 +30,8 @@ const (
 
 // Make instantiates a new internal Table instance
 func Make[Msg, Value any](
-	key table2.KeySelector[Msg], cols ...table2.Column[Msg, Value],
-) table2.Table[Msg, Value] {
+	key _table.KeySelector[Msg], cols ..._table.Column[Msg, Value],
+) _table.Table[Msg, Value] {
 	return &table[Msg, Value]{
 		key:       key,
 		cols:      cols,
@@ -42,25 +42,25 @@ func Make[Msg, Value any](
 }
 
 // KeySelector returns the KeySelector for this Table
-func (t *table[Msg, _]) KeySelector() table2.KeySelector[Msg] {
+func (t *table[Msg, _]) KeySelector() _table.KeySelector[Msg] {
 	return t.key
 }
 
 // Columns returns the defined Columns for this Table
-func (t *table[Msg, Value]) Columns() []table2.Column[Msg, Value] {
+func (t *table[Msg, Value]) Columns() []_table.Column[Msg, Value] {
 	return t.cols
 }
 
 // Update adds or overwrites a message in the Table. The message is associated
 // with a Key that is selected from the message using the Table's KeySelector
-func (t *table[Msg, Value]) Update(msg Msg) (table2.Relation[Value], error) {
+func (t *table[Msg, Value]) Update(msg Msg) (_table.Relation[Value], error) {
 	t.Lock()
 	defer t.Unlock()
 	k, err := t.key(msg)
 	if err != nil {
 		return nil, err
 	}
-	row := make(table2.Relation[Value], len(t.lookups))
+	row := make(_table.Relation[Value], len(t.lookups))
 	for i, s := range t.selectors {
 		v, err := s(msg)
 		if err != nil {
@@ -75,8 +75,8 @@ func (t *table[Msg, Value]) Update(msg Msg) (table2.Relation[Value], error) {
 // Selector constructs a ColumnSelector for this Table, the results of which
 // match the provided column names
 func (t *table[Msg, Value]) Selector(
-	c ...table2.ColumnName,
-) (table2.ColumnSelector[Value], error) {
+	c ..._table.ColumnName,
+) (_table.ColumnSelector[Value], error) {
 	sel, err := t.columnSelect(c)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (t *table[Msg, Value]) Selector(
 	return t.tableSelector(sel)
 }
 
-func (t *table[_, _]) columnSelect(c []table2.ColumnName) ([]int, error) {
+func (t *table[_, _]) columnSelect(c []_table.ColumnName) ([]int, error) {
 	sel := make([]int, len(c))
 	for i, name := range c {
 		s, ok := t.lookups[name]
@@ -98,10 +98,10 @@ func (t *table[_, _]) columnSelect(c []table2.ColumnName) ([]int, error) {
 
 func (t *table[_, Value]) tableSelector(
 	indexes []int,
-) (table2.ColumnSelector[Value], error) {
-	return func(key table2.Key) (table2.Relation[Value], error) {
+) (_table.ColumnSelector[Value], error) {
+	return func(key _table.Key) (_table.Relation[Value], error) {
 		if e, ok := t.get(key); ok {
-			res := make(table2.Relation[Value], len(indexes))
+			res := make(_table.Relation[Value], len(indexes))
 			for out, in := range indexes {
 				res[out] = e[in]
 			}
@@ -111,7 +111,7 @@ func (t *table[_, Value]) tableSelector(
 	}, nil
 }
 
-func (t *table[_, Value]) get(k table2.Key) (table2.Relation[Value], bool) {
+func (t *table[_, Value]) get(k _table.Key) (_table.Relation[Value], bool) {
 	t.RLock()
 	defer t.RUnlock()
 	res, ok := t.rows[k]
@@ -119,16 +119,16 @@ func (t *table[_, Value]) get(k table2.Key) (table2.Relation[Value], bool) {
 }
 
 func makeSelectors[Msg, Value any](
-	cols []table2.Column[Msg, Value],
-) []table2.Selector[Msg, Value] {
-	res := make([]table2.Selector[Msg, Value], len(cols))
+	cols []_table.Column[Msg, Value],
+) []_table.Selector[Msg, Value] {
+	res := make([]_table.Selector[Msg, Value], len(cols))
 	for i, c := range cols {
 		res[i] = c.Selector()
 	}
 	return res
 }
 
-func makeLookups[Msg, Value any](cols []table2.Column[Msg, Value]) columnIndexes {
+func makeLookups[Msg, Value any](cols []_table.Column[Msg, Value]) columnIndexes {
 	res := make(columnIndexes, len(cols))
 	for i, c := range cols {
 		res[c.Name()] = i
