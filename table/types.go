@@ -3,13 +3,13 @@ package table
 import "github.com/caravan/essentials/id"
 
 type (
-	// Key is used to uniquely identify an message in the Table
+	// Key is used to uniquely identify a message in the Table
 	Key = id.ID
 
-	// KeySelector is used to extract the Key from an message
+	// KeySelector is used to extract the Key from a message
 	KeySelector[Msg any] func(Msg) (Key, error)
 
-	// Selector is used to extract a Value from an message
+	// Selector is used to extract a Value from a message
 	Selector[Msg, Value any] func(Msg) (Value, error)
 
 	// ColumnName is exactly what you think it is
@@ -17,7 +17,7 @@ type (
 
 	// Column describes a column to be selected from a Table. The
 	// description includes the column's name and a Selector for
-	// retrieving the column's value from an message
+	// retrieving the column's value from a message
 	Column[Msg, Value any] interface {
 		Name() ColumnName
 		Selector() Selector[Msg, Value]
@@ -30,11 +30,11 @@ type (
 	// pre-defined set of Column values from a Table
 	ColumnSelector[Value any] func(Key) (Relation[Value], error)
 
-	// Table is an interface that associates a Key with an message. The Key
+	// Table is an interface that associates a Key with a message. The Key
 	// is selected from the message using the Table's KeySelector
 	Table[Msg, Value any] interface {
 		// KeySelector returns the key selector for this Table. This
-		// selector can be used to retrieve the Key from an message for this
+		// selector can be used to retrieve the Key from a message for this
 		// Table independent of calls to Update or Selector
 		KeySelector() KeySelector[Msg]
 
@@ -42,8 +42,8 @@ type (
 		// of this Table
 		Columns() []Column[Msg, Value]
 
-		// Update stores an message in the Table, associating it with the
-		// Key retrieved using the KeySelector. If an message was already
+		// Update stores a message in the Table, associating it with the
+		// Key retrieved using the KeySelector. If a message was already
 		// associated with the Key, it is overwritten. The materialized
 		// Relation is returned.
 		Update(Msg) (Relation[Value], error)

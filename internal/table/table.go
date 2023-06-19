@@ -51,7 +51,7 @@ func (t *table[Msg, Value]) Columns() []table2.Column[Msg, Value] {
 	return t.cols
 }
 
-// Update adds or overwrites an message in the Table. The message is associated
+// Update adds or overwrites a message in the Table. The message is associated
 // with a Key that is selected from the message using the Table's KeySelector
 func (t *table[Msg, Value]) Update(msg Msg) (table2.Relation[Value], error) {
 	t.Lock()

@@ -45,7 +45,7 @@ type (
 
 		// TableLookup retrieves a Key of the messages from this Builder,
 		// and uses that key to perform a lookup on the provided Table.
-		// If an message is retrieved from that table, the value in the
+		// If a message is retrieved from that table, the value in the
 		// specified column is forwarded
 		TableLookup(
 			table.Table[Msg, Msg], table.ColumnName, table.KeySelector[Msg],
