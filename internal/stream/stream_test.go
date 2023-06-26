@@ -49,8 +49,10 @@ func TestStreamStartStop(t *testing.T) {
 func TestStreamError(t *testing.T) {
 	as := assert.New(t)
 	as.Equal(stream.Stop{}.Error(), stream.ErrStopRequested)
-	s := streaming.NewStream[any](
+	var s stream.Stream
+	s = streaming.NewStream[any](
 		func(c *context.Context[any, any]) {
+			as.True(s.IsRunning())
 			c.ReportError(stream.Stop{})
 		},
 	)

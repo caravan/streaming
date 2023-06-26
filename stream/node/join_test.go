@@ -50,9 +50,9 @@ func TestJoin(t *testing.T) {
 	lp.Send() <- 3 // no match
 	time.Sleep(10 * time.Millisecond)
 	rp.Send() <- 10 // no match
-	lp.Send() <- 5
-	time.Sleep(10 * time.Millisecond)
 	rp.Send() <- 3
+	time.Sleep(10 * time.Millisecond)
+	lp.Send() <- 5
 	rp.Send() <- 4 // no match
 	time.Sleep(10 * time.Millisecond)
 	lp.Send() <- 3 // no match
