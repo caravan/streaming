@@ -65,15 +65,15 @@ type (
 		// methods
 		Sink(stream.Processor[Msg, Msg]) TerminalBuilder[Msg]
 
-		// TopicSink adds a SinkProcessor to this Builder that is based
+		// TopicProducer adds a SinkProcessor to this Builder that is based
 		// on the specified Topic. So all messages that this Stream produces
 		// will end up in that Topic. This is a terminal in the graph
-		TopicSink(topic.Topic[Msg]) TerminalBuilder[Msg]
+		TopicProducer(topic.Topic[Msg]) Builder[Msg]
 
-		// TableSink adds a SinkProcessor to this Builder that is based
+		// TableUpdater adds a SinkProcessor to this Builder that is based
 		// on the specified Table. So all messages that this Stream produces
 		// will end up in that Table. This is a terminal in the graph
-		TableSink(table.Table[Msg, Msg]) TerminalBuilder[Msg]
+		TableUpdater(table.Table[Msg, Msg]) Builder[Msg]
 	}
 
 	// TerminalBuilder is a sub-portion of the Builder interface that is

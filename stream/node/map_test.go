@@ -15,11 +15,11 @@ func TestMap(t *testing.T) {
 	outTopic := essentials.NewTopic[string]()
 	typed := streaming.Of[string]()
 	s := typed.NewStream(
-		typed.TopicSource(inTopic),
+		typed.TopicConsumer(inTopic),
 		typed.Map(func(s string) string {
 			return "Hello, " + s + "!"
 		}),
-		typed.TopicSink(outTopic),
+		typed.TopicProducer(outTopic),
 	)
 
 	as.Nil(s.Start())

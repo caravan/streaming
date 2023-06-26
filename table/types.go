@@ -38,7 +38,7 @@ type (
 		// Table independent of calls to Update or Selector
 		KeySelector() KeySelector[Msg]
 
-		// Columns returns the column definitions that are defined as part
+		// Columns will return the column definitions that are defined as part
 		// of this Table
 		Columns() []Column[Msg, Value]
 

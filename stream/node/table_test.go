@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/caravan/essentials/id"
+	"github.com/caravan/streaming/stream/context"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
@@ -38,10 +39,14 @@ func TestTableLookup(t *testing.T) {
 	as.NotNil(lookup)
 	as.Nil(err)
 
-	lookup("anything", func(s string, err error) {
-		as.Equal("some value", s)
-		as.Nil(err)
-	})
+	done := make(chan context.Done)
+	in := make(chan string)
+	out := make(chan string)
+
+	lookup.Start(context.Make(done, make(chan error), in, out))
+	in <- "anything"
+	as.Equal("some value", <-out)
+	close(done)
 }
 
 func TestLookupCreateError(t *testing.T) {
@@ -70,7 +75,7 @@ func TestLookupProcessError(t *testing.T) {
 		}),
 	)
 
-	lookup, err := node.TableLookup(tbl, "*",
+	lookup, e := node.TableLookup(tbl, "*",
 		func(e any) (table.Key, error) {
 			if err, ok := e.(error); ok {
 				return id.Nil, err
@@ -80,15 +85,18 @@ func TestLookupProcessError(t *testing.T) {
 	)
 
 	as.NotNil(lookup)
-	as.Nil(err)
+	as.Nil(e)
 
-	lookup(errors.New("key error"), func(a any, err error) {
-		as.Nil(a)
-		as.EqualError(err, "key error")
-	})
+	done := make(chan context.Done)
+	in := make(chan any)
+	err := make(chan error)
 
-	lookup("missing", func(a any, err error) {
-		as.Nil(a)
-		as.EqualError(err, fmt.Sprintf(_table.ErrKeyNotFound, theKey))
-	})
+	lookup.Start(context.Make(done, err, in, make(chan any)))
+
+	in <- errors.New("key error")
+	as.EqualError(<-err, "key error")
+
+	in <- "missing"
+	as.EqualError(<-err, fmt.Sprintf(_table.ErrKeyNotFound, theKey))
+	close(done)
 }

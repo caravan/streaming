@@ -19,11 +19,10 @@ func TestReduce(t *testing.T) {
 	outTopic := essentials.NewTopic[int]()
 
 	typed := streaming.Of[int]()
-	reduce, reset := typed.ReduceWithReset(sumReducer)
 	sub := typed.Subprocess(
-		typed.TopicSource(inTopic),
-		reduce,
-		typed.TopicSink(outTopic),
+		typed.TopicConsumer(inTopic),
+		typed.Reduce(sumReducer),
+		typed.TopicProducer(outTopic),
 	)
 	s := typed.NewStream(sub)
 
@@ -37,11 +36,6 @@ func TestReduce(t *testing.T) {
 	as.Equal(3, <-c.Receive())
 	as.Equal(6, <-c.Receive())
 
-	reset()
-	p.Send() <- 4
-	p.Send() <- 5
-	as.Equal(9, <-c.Receive())
-
 	c.Close()
 	p.Close()
 	as.Nil(s.Stop())
@@ -53,11 +47,10 @@ func TestReduceFrom(t *testing.T) {
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
 	typed := streaming.Of[int]()
-	reduce, reset := typed.ReduceFromWithReset(sumReducer, 5)
 	sub := typed.Subprocess(
-		typed.TopicSource(inTopic),
-		reduce,
-		typed.TopicSink(outTopic),
+		typed.TopicConsumer(inTopic),
+		typed.ReduceFrom(sumReducer, 5),
+		typed.TopicProducer(outTopic),
 	)
 	s := typed.NewStream(sub)
 
@@ -71,10 +64,6 @@ func TestReduceFrom(t *testing.T) {
 	as.Equal(6, <-c.Receive())
 	as.Equal(8, <-c.Receive())
 	as.Equal(11, <-c.Receive())
-
-	reset()
-	p.Send() <- 4
-	as.Equal(9, <-c.Receive())
 
 	c.Close()
 	p.Close()

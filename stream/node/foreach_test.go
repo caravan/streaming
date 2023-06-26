@@ -16,7 +16,7 @@ func TestForEach(t *testing.T) {
 	inTopic := essentials.NewTopic[int]()
 	typed := streaming.Of[int]()
 	s := typed.NewStream(
-		typed.TopicSource(inTopic),
+		typed.TopicConsumer(inTopic),
 		typed.ForEach(func(m int) {
 			sum += m
 		}),

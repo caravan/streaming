@@ -15,11 +15,11 @@ func TestFilter(t *testing.T) {
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
 	s := typed.NewStream(
-		typed.TopicSource(inTopic),
+		typed.TopicConsumer(inTopic),
 		typed.Filter(func(m int) bool {
 			return m%2 == 0
 		}),
-		typed.TopicSink(outTopic),
+		typed.TopicProducer(outTopic),
 	)
 	as.Nil(s.Start())
 

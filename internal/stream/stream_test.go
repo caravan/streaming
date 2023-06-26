@@ -6,6 +6,7 @@ import (
 
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
+	"github.com/caravan/streaming/stream/context"
 	"github.com/stretchr/testify/assert"
 
 	_stream "github.com/caravan/streaming/internal/stream"
@@ -49,8 +50,8 @@ func TestStreamError(t *testing.T) {
 	as := assert.New(t)
 	as.Equal(stream.Stop{}.Error(), stream.ErrStopRequested)
 	s := streaming.NewStream[any](
-		func(_ any, rep stream.Reporter[any]) {
-			rep(nil, stream.Stop{})
+		func(c *context.Context[any, any]) {
+			c.ReportError(stream.Stop{})
 		},
 	)
 	as.Nil(s.Start())

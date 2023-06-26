@@ -9,6 +9,7 @@ import (
 	"github.com/caravan/essentials/message"
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
+	"github.com/caravan/streaming/stream/context"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,9 +21,10 @@ func joinSum(l int, r int) int {
 	return l + r
 }
 
-func makeJoinError(err error) stream.Processor[int, int] {
-	return func(_ int, rep stream.Reporter[int]) {
-		rep(0, err)
+func makeJoinError(e error) stream.Processor[int, int] {
+	return func(c *context.Context[int, int]) {
+		<-c.In
+		c.Errors <- e
 	}
 }
 
@@ -35,11 +37,11 @@ func TestJoin(t *testing.T) {
 	typed := streaming.Of[int]()
 	s := typed.NewStream(
 		typed.Join(
-			typed.TopicSource(leftTopic),
-			typed.TopicSource(rightTopic),
+			typed.TopicConsumer(leftTopic),
+			typed.TopicConsumer(rightTopic),
 			joinGreaterThan, joinSum,
 		),
-		typed.TopicSink(outTopic),
+		typed.TopicProducer(outTopic),
 	)
 
 	as.Nil(s.Start())
@@ -60,7 +62,7 @@ func TestJoin(t *testing.T) {
 	rp.Close()
 	lp.Close()
 
-	c := outTopic.NewConsumer()
+	c := outTopic.NewConsumer() // Otherwise it's discarded
 	as.Equal(8, <-c.Receive())
 	as.Equal(21, <-c.Receive())
 	c.Close()
@@ -76,11 +78,11 @@ func TestJoinErrored(t *testing.T) {
 	typed := streaming.Of[int]()
 	s := typed.NewStream(
 		typed.Join(
-			typed.TopicSource(inTopic),
+			typed.TopicConsumer(inTopic),
 			makeJoinError(errors.New("error")),
 			joinGreaterThan, joinSum,
 		),
-		typed.TopicSink(outTopic),
+		typed.TopicProducer(outTopic),
 	)
 
 	as.Nil(s.Start())

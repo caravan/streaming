@@ -26,13 +26,15 @@ func Source[Msg any](p stream.Processor[Msg, Msg]) Builder[Msg] {
 	return makeInitial[Msg]().processor(p)
 }
 
-// TopicSource initiates a new Builder, with its messages originating in the
+// TopicConsumer initiates a new Builder, with its messages originating in the
 // provided Topic
-func TopicSource[Msg any](t topic.Topic[Msg]) Builder[Msg] {
-	fn := node.TopicSource[Msg](t)
-	return Source(func(_ Msg, rep stream.Reporter[Msg]) {
-		fn(nil, rep)
-	})
+func TopicConsumer[Msg any](t topic.Topic[Msg]) Builder[Msg] {
+	return Source(
+		node.Bind(
+			node.Map(func(msg Msg) any { return msg }),
+			node.TopicConsumer(t),
+		),
+	)
 }
 
 // Merge initiates a new Builder, with its messages originating from the
@@ -89,15 +91,13 @@ func (b *builder[Msg]) Map(fn node.Mapper[Msg, Msg]) Builder[Msg] {
 }
 
 func (b *builder[Msg]) Reduce(fn node.Reducer[Msg, Msg]) Builder[Msg] {
-	p, _ := node.Reduce(fn)
-	return b.processor(p)
+	return b.processor(node.Reduce(fn))
 }
 
 func (b *builder[Msg]) ReduceFrom(
 	fn node.Reducer[Msg, Msg], init Msg,
 ) Builder[Msg] {
-	p, _ := node.ReduceFrom(fn, init)
-	return b.processor(p)
+	return b.processor(node.ReduceFrom(fn, init))
 }
 
 func (b *builder[Msg]) TableLookup(
@@ -117,15 +117,15 @@ func (b *builder[Msg]) Deferred(fn Deferred[Msg]) Builder[Msg] {
 }
 
 func (b *builder[Msg]) Sink(p stream.Processor[Msg, Msg]) TerminalBuilder[Msg] {
-	return b.processor(p)
+	return b.processor(node.Bind(p, node.Sink[Msg]()))
 }
 
-func (b *builder[Msg]) TopicSink(t topic.Topic[Msg]) TerminalBuilder[Msg] {
-	return b.Sink(node.TopicSink(t))
+func (b *builder[Msg]) TopicProducer(t topic.Topic[Msg]) Builder[Msg] {
+	return b.processor(node.TopicProducer[Msg](t))
 }
 
-func (b *builder[Msg]) TableSink(t table.Table[Msg, Msg]) TerminalBuilder[Msg] {
-	return b.Sink(node.TableSink(t))
+func (b *builder[Msg]) TableUpdater(t table.Table[Msg, Msg]) Builder[Msg] {
+	return b.processor(node.TableUpdater[Msg](t))
 }
 
 func (b *builder[Msg]) Build() (stream.Processor[Msg, Msg], error) {

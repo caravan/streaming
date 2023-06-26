@@ -10,17 +10,24 @@ import (
 	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/build"
+	"github.com/caravan/streaming/stream/node"
 	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
 	"github.com/stretchr/testify/assert"
 )
+
+func makeNumberProcessor(val int) stream.Processor[int, int] {
+	return node.Map(func(i int) int {
+		return val
+	})
+}
 
 func TestPump(t *testing.T) {
 	as := assert.New(t)
 	in := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s, err := build.TopicSource[int](in).TopicSink(out).Stream()
+	s, err := build.TopicConsumer(in).TopicProducer(out).Stream()
 	as.NotNil(s)
 	as.Nil(err)
 	as.Nil(s.Start())
@@ -47,7 +54,7 @@ func TestFilterMapReduce(t *testing.T) {
 	out := essentials.NewTopic[int]()
 
 	s, err := build.
-		TopicSource[int](in).
+		TopicConsumer(in).
 		Filter(func(i int) bool {
 			return i%2 == 0
 		}).
@@ -57,7 +64,7 @@ func TestFilterMapReduce(t *testing.T) {
 		Reduce(func(l int, r int) int {
 			return l + r
 		}).
-		TopicSink(out).
+		TopicProducer(out).
 		Stream()
 
 	as.NotNil(s)
@@ -88,11 +95,11 @@ func TestReduceFrom(t *testing.T) {
 	out := essentials.NewTopic[int]()
 
 	s, err := build.
-		TopicSource[int](in).
+		TopicConsumer(in).
 		ReduceFrom(func(l int, r int) int {
 			return l + r
 		}, 10).
-		TopicSink(out).
+		TopicProducer(out).
 		Stream()
 
 	as.NotNil(s)
@@ -121,11 +128,9 @@ func TestProcessor(t *testing.T) {
 	out := essentials.NewTopic[int]()
 
 	s, err := build.
-		TopicSource[int](in).
-		Processor(func(_ int, rep stream.Reporter[int]) {
-			rep(42, nil)
-		}).
-		TopicSink(out).
+		TopicConsumer(in).
+		Processor(makeNumberProcessor(42)).
+		TopicProducer(out).
 		Stream()
 
 	as.NotNil(s)
@@ -154,18 +159,14 @@ func TestMerge(t *testing.T) {
 	out := essentials.NewTopic[int]()
 
 	s, err := build.
-		TopicSource[int](l).
-		Processor(func(_ int, rep stream.Reporter[int]) {
-			rep(42, nil)
-		}).
+		TopicConsumer(l).
+		Processor(makeNumberProcessor(42)).
 		Merge(
 			build.
-				TopicSource[int](r).
-				Processor(func(_ int, rep stream.Reporter[int]) {
-					rep(96, nil)
-				}),
+				TopicConsumer(r).
+				Processor(makeNumberProcessor(96)),
 		).
-		TopicSink(out).
+		TopicProducer(out).
 		Stream()
 
 	as.NotNil(s)
@@ -203,7 +204,7 @@ func TestMergeBuildError(t *testing.T) {
 
 	s, err := build.
 		Merge(
-			build.TopicSource[any](in).Deferred(
+			build.TopicConsumer(in).Deferred(
 				func() (stream.Processor[any, any], error) {
 					return nil, errors.New("error raised")
 				},
@@ -223,9 +224,9 @@ func TestJoin(t *testing.T) {
 	out := essentials.NewTopic[int]()
 
 	s, err := build.
-		TopicSource[int](l).
+		TopicConsumer(l).
 		Join(
-			build.TopicSource[int](r),
+			build.TopicConsumer(r),
 			func(l int, r int) bool {
 				return true
 			},
@@ -233,7 +234,7 @@ func TestJoin(t *testing.T) {
 				return l + r
 			},
 		).
-		TopicSink(out).
+		TopicProducer(out).
 		Stream()
 
 	as.NotNil(s)
@@ -278,8 +279,8 @@ func TestTableSink(t *testing.T) {
 	)
 
 	s, err := build.
-		TopicSource(in).
-		TableSink(out).
+		TopicConsumer(in).
+		TableUpdater(out).
 		Stream()
 
 	as.NotNil(s)
@@ -325,9 +326,9 @@ func TestTableLookup(t *testing.T) {
 	out := essentials.NewTopic[any]()
 
 	s, err := build.
-		TopicSource(in).
+		TopicConsumer(in).
 		TableLookup(tbl, "*", ks).
-		TopicSink(out).
+		TopicProducer(out).
 		Stream()
 
 	as.NotNil(s)
@@ -351,12 +352,12 @@ func TestJoinBuildError(t *testing.T) {
 
 	s, err := build.
 		Join(
-			build.TopicSource[int](l).Deferred(
+			build.TopicConsumer(l).Deferred(
 				func() (stream.Processor[int, int], error) {
 					return nil, errors.New("error raised")
 				},
 			),
-			build.TopicSource[int](r),
+			build.TopicConsumer(r),
 			func(l int, r int) bool {
 				return true
 			},
@@ -375,7 +376,7 @@ func TestDeferredError(t *testing.T) {
 
 	in := essentials.NewTopic[any]()
 	s, err := build.
-		TopicSource[any](in).
+		TopicConsumer(in).
 		Deferred(func() (stream.Processor[any, any], error) {
 			return nil, errors.New("error raised")
 		}).

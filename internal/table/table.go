@@ -22,7 +22,7 @@ type (
 	tableRows[Value any] map[_table.Key]_table.Relation[Value]
 )
 
-// Error messages
+// ReportError messages
 const (
 	ErrKeyNotFound    = "key not found in table: %s"
 	ErrColumnNotFound = "column not found in table: %s"

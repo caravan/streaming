@@ -28,14 +28,14 @@ func main() {
     out := essentials.NewTopic[int]()
 	
     s, _ := build.
-        TopicSource[int](left).
+        TopicConsumer(left).
         Filter(func(m int) bool {
             // Filter out numbers greater than or equal to 200
             return m < 200
         }).
         Join(
             build.
-                TopicSource[int](right).
+                TopicConsumer(right).
                 Filter(func(m int) bool {
                     // Filter out numbers less than or equal to 100
                     return m > 100
@@ -49,7 +49,7 @@ func main() {
                 return l * r
             },
         ).
-        TopicSink(out).
+        TopicProducer(out).
         Stream()
     _ = s.Start()
 

@@ -1,9 +1,8 @@
 package node
 
 import (
-	"sync"
-
 	"github.com/caravan/streaming/stream"
+	"github.com/caravan/streaming/stream/context"
 )
 
 type (
@@ -13,17 +12,6 @@ type (
 
 	// BinaryOperator combines the left and right messages into some new result
 	BinaryOperator[Left, Right, Res any] func(Left, Right) Res
-
-	joinState int
-)
-
-const (
-	joinInit joinState = iota
-	joinLeft
-	joinRight
-	joinForwarded
-	joinSkipped
-	joinFailed
 )
 
 // Join accepts two Processors for the sake of joining their results based on a
@@ -36,55 +24,70 @@ func Join[Msg, Left, Right, Res any](
 	predicate BinaryPredicate[Left, Right],
 	joiner BinaryOperator[Left, Right, Res],
 ) stream.Processor[Msg, Res] {
-	return func(msg Msg, rep stream.Reporter[Res]) {
-		var group sync.WaitGroup
-		group.Add(2)
+	return func(c *context.Context[Msg, Res]) {
+		leftIn := make(chan Msg)
+		rightIn := make(chan Msg)
+		leftOut := make(chan Left)
+		rightOut := make(chan Right)
+		left.Start(context.Make(c.Done, c.Errors, leftIn, leftOut))
+		right.Start(context.Make(c.Done, c.Errors, rightIn, rightOut))
 
-		var leftMsg Left
-		var rightMsg Right
-		state := joinInit
-
-		resolve := func() {
-			if !predicate(leftMsg, rightMsg) {
-				state = joinSkipped
-				return
+		splitInput := func(msg Msg) bool {
+			select {
+			case <-c.Done:
+				return false
+			case leftIn <- msg:
+				select {
+				case <-c.Done:
+					return false
+				case rightIn <- msg:
+					return true
+				}
+			case rightIn <- msg:
+				select {
+				case <-c.Done:
+					return false
+				case leftIn <- msg:
+					return true
+				}
 			}
-			Forward(joiner(leftMsg, rightMsg), rep)
-			state = joinForwarded
 		}
 
-		go func() {
-			left(msg, func(res Left, err error) {
-				if err != nil {
-					state = joinFailed
-					return
+		joinResults := func() (Left, Right, bool) {
+			var leftZero Left
+			var rightZero Right
+			select {
+			case <-c.Done:
+				return leftZero, rightZero, false
+			case leftMsg := <-leftOut:
+				select {
+				case <-c.Done:
+					return leftZero, rightZero, false
+				case rightMsg := <-rightOut:
+					return leftMsg, rightMsg, true
 				}
-				leftMsg = res
-				if state == joinRight {
-					resolve()
-				} else {
-					state = joinLeft
+			case rightMsg := <-rightOut:
+				select {
+				case <-c.Done:
+					return leftZero, rightZero, false
+				case leftMsg := <-leftOut:
+					return leftMsg, rightMsg, true
 				}
-			})
-			group.Done()
-		}()
+			}
+		}
 
-		go func() {
-			right(msg, func(res Right, err error) {
-				if err != nil {
-					state = joinFailed
-					return
-				}
-				rightMsg = res
-				if state == joinLeft {
-					resolve()
-				} else {
-					state = joinRight
-				}
-			})
-			group.Done()
-		}()
-
-		group.Wait()
+		for {
+			if msg, ok := c.FetchMessage(); !ok {
+				return
+			} else if !splitInput(msg) {
+				return
+			} else if left, right, ok := joinResults(); !ok {
+				return
+			} else if !predicate(left, right) {
+				continue
+			} else if !c.ForwardResult(joiner(left, right)) {
+				return
+			}
+		}
 	}
 }

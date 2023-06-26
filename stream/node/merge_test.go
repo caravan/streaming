@@ -2,34 +2,30 @@ package node_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/caravan/essentials"
 	"github.com/caravan/streaming"
-	"github.com/caravan/streaming/stream"
+	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMerge(t *testing.T) {
 	as := assert.New(t)
 
-	add1 := func(i int, rep stream.Reporter[int]) {
-		rep(i+1, nil)
-	}
-
-	times2 := func(i int, rep stream.Reporter[int]) {
-		// Multiplication is slower
-		time.Sleep(50 * time.Millisecond)
-		rep(i*2, nil)
-	}
-
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
 	typed := streaming.Of[int]()
 	s := typed.NewStream(
-		typed.TopicSource(inTopic),
-		typed.Merge(add1, times2),
-		typed.TopicSink(outTopic),
+		typed.TopicConsumer(inTopic),
+		typed.Merge(
+			node.Map(func(i int) int {
+				return i + 1
+			}),
+			node.Map(func(i int) int {
+				return i * 2
+			}),
+		),
+		typed.TopicProducer(outTopic),
 	)
 
 	as.Nil(s.Start())
@@ -39,10 +35,20 @@ func TestMerge(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	as.Equal(4, <-c.Receive())
-	as.Equal(6, <-c.Receive())
-	as.Equal(11, <-c.Receive())
-	as.Equal(20, <-c.Receive())
+	in := <-c.Receive()
+	as.True(in == 4 || in == 6)
+	if in == 4 {
+		as.Equal(6, <-c.Receive())
+	} else {
+		as.Equal(4, <-c.Receive())
+	}
+	in = <-c.Receive()
+	as.True(in == 11 || in == 20)
+	if in == 11 {
+		as.Equal(20, <-c.Receive())
+	} else {
+		as.Equal(11, <-c.Receive())
+	}
 	c.Close()
 
 	as.Nil(s.Stop())

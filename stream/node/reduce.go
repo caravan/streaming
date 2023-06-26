@@ -1,41 +1,24 @@
 package node
 
-import "github.com/caravan/streaming/stream"
+import (
+	"github.com/caravan/streaming/stream"
+	"github.com/caravan/streaming/stream/context"
+)
 
 type (
 	// Reducer is the signature for a function that can perform Stream
 	// reduction. The message that is returned will be passed downstream
 	Reducer[Res, Msg any] func(Res, Msg) Res
 
-	// Reset allows a Reducer to be reset to its initial state
-	Reset func()
+	initialReduction[Res any] func() Res
 )
 
 // Reduce constructs a processor that reduces the messages it sees into some form
 // of aggregated messages, based on the provided function
 func Reduce[Msg, Res any](
 	fn Reducer[Res, Msg],
-) (stream.Processor[Msg, Res], Reset) {
-	var res Res
-	var reduce func(msg Msg, rep stream.Reporter[Res])
-
-	initReduce := func(msg Msg, _ stream.Reporter[Res]) {
-		var zero Res
-		res = fn(zero, msg)
-		reduce = func(msg Msg, rep stream.Reporter[Res]) {
-			res = fn(res, msg)
-			Forward(res, rep)
-		}
-	}
-	reduce = initReduce
-
-	reset := func() {
-		reduce = initReduce
-	}
-
-	return func(msg Msg, rep stream.Reporter[Res]) {
-		reduce(msg, rep)
-	}, reset
+) stream.Processor[Msg, Res] {
+	return reduce(fn, nil)
 }
 
 // ReduceFrom constructs a processor that reduces the messages it sees into some
@@ -43,13 +26,46 @@ func Reduce[Msg, Res any](
 // message
 func ReduceFrom[Msg, Res any](
 	fn Reducer[Res, Msg], init Res,
-) (stream.Processor[Msg, Res], Reset) {
-	res := init
-	reset := func() {
-		res = init
+) stream.Processor[Msg, Res] {
+	return reduce(fn, func() Res {
+		return init
+	})
+}
+
+func reduce[Msg, Res any](
+	fn Reducer[Res, Msg], initial initialReduction[Res],
+) stream.Processor[Msg, Res] {
+	return func(c *context.Context[Msg, Res]) {
+		var fetchFirst func() (Res, bool)
+
+		if initial != nil {
+			fetchFirst = func() (Res, bool) {
+				return initial(), true
+			}
+		} else {
+			fetchFirst = func() (Res, bool) {
+				var zero Res
+				if msg, ok := c.FetchMessage(); !ok {
+					return zero, false
+				} else {
+					return fn(zero, msg), true
+				}
+			}
+		}
+
+		if res, ok := fetchFirst(); !ok {
+			return
+		} else {
+			for {
+				if msg, ok := c.FetchMessage(); !ok {
+					return
+				} else {
+					res = fn(res, msg)
+					if !c.ForwardResult(res) {
+						return
+					}
+				}
+			}
+		}
 	}
-	return func(msg Msg, rep stream.Reporter[Res]) {
-		res = fn(res, msg)
-		Forward(res, rep)
-	}, reset
 }
