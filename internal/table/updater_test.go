@@ -76,6 +76,28 @@ func TestUpdater(t *testing.T) {
 	as.EqualError(err, fmt.Sprintf(_table.ErrKeyNotFound, missing))
 }
 
+func TestBadUpdater(t *testing.T) {
+	as := assert.New(t)
+
+	emptyTable, err := _table.Make[string, any]()
+	as.NotNil(emptyTable)
+	as.Nil(err)
+
+	updater, err := _table.MakeUpdater[*tableRow, string, any](emptyTable,
+		func(r *tableRow) (string, error) {
+			if r == nil || r.key == "" {
+				return "", errors.New("key-error")
+			}
+			return r.key, nil
+		},
+		column.Make("explode", func(e *tableRow) (any, error) {
+			return "", errors.New("column-error")
+		}),
+	)
+	as.Nil(updater)
+	as.Errorf(err, _table.ErrColumnNotFound, "explode")
+}
+
 func TestBadSelectors(t *testing.T) {
 	as := assert.New(t)
 

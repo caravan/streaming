@@ -20,7 +20,7 @@ const (
 	ErrKeyNotFound         = "key not found in table: %v"
 	ErrColumnNotFound      = "column not found in table: %s"
 	ErrDuplicateColumnName = "column name duplicated in table: %s"
-	ErrValueCountRequired  = "%d values are required"
+	ErrValueCountRequired  = "%d values are required, you provided %d"
 )
 
 func Make[Key comparable, Value any](
@@ -82,7 +82,7 @@ func (t *table[Key, Value]) Setter(
 		defer t.Unlock()
 
 		if len(v) != len(indexes) {
-			return fmt.Errorf(ErrValueCountRequired, len(indexes))
+			return fmt.Errorf(ErrValueCountRequired, len(indexes), len(v))
 		}
 		e, ok := t.rows[k]
 		if !ok {
