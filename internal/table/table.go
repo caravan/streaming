@@ -15,14 +15,6 @@ type table[Key comparable, Value any] struct {
 	rows    map[Key][]Value
 }
 
-// ReportError messages
-const (
-	ErrKeyNotFound         = "key not found in table: %v"
-	ErrColumnNotFound      = "column not found in table: %s"
-	ErrDuplicateColumnName = "column name duplicated in table: %s"
-	ErrValueCountRequired  = "%d values are required, you provided %d"
-)
-
 func Make[Key comparable, Value any](
 	c ..._table.ColumnName,
 ) (_table.Table[Key, Value], error) {
@@ -62,7 +54,7 @@ func (t *table[Key, Value]) Getter(
 			}
 			return res, nil
 		}
-		return nil, fmt.Errorf(ErrKeyNotFound, k)
+		return nil, fmt.Errorf(_table.ErrKeyNotFound, k)
 	}, nil
 }
 
@@ -82,7 +74,9 @@ func (t *table[Key, Value]) Setter(
 		defer t.Unlock()
 
 		if len(v) != len(indexes) {
-			return fmt.Errorf(ErrValueCountRequired, len(indexes), len(v))
+			return fmt.Errorf(
+				_table.ErrValueCountRequired, len(indexes), len(v),
+			)
 		}
 		e, ok := t.rows[k]
 		if !ok {
@@ -101,7 +95,7 @@ func (t *table[_, _]) columnIndexes(c []_table.ColumnName) ([]int, error) {
 	for i, name := range c {
 		s, ok := t.indexes[name]
 		if !ok {
-			return nil, fmt.Errorf(ErrColumnNotFound, name)
+			return nil, fmt.Errorf(_table.ErrColumnNotFound, name)
 		}
 		sel[i] = s
 	}
@@ -112,7 +106,7 @@ func checkColumnDuplicates(c []_table.ColumnName) error {
 	names := map[_table.ColumnName]bool{}
 	for _, n := range c {
 		if _, ok := names[n]; ok {
-			return fmt.Errorf(ErrDuplicateColumnName, n)
+			return fmt.Errorf(_table.ErrDuplicateColumnName, n)
 		}
 		names[n] = true
 	}

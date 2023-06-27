@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"github.com/caravan/essentials/topic"
-	_stream "github.com/caravan/streaming/internal/stream"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
 )
@@ -30,10 +29,6 @@ type (
 		) stream.Processor[Msg, Msg]
 		Sink() stream.Processor[Msg, Msg]
 		Subprocess(...stream.Processor[Msg, Msg]) stream.Processor[Msg, Msg]
-		//TableLookup(
-		//	table.Table[Msg, Msg], table.ColumnName, table.KeySelector[Msg],
-		//) (stream.Processor[Msg, Msg], error)
-		//TableUpdater(table.Table[Msg, Msg]) stream.Processor[Msg, Msg]
 		TopicConsumer(topic.Topic[Msg]) stream.Processor[Msg, Msg]
 		TopicProducer(topic.Topic[Msg]) stream.Processor[Msg, Msg]
 	}
@@ -46,9 +41,7 @@ func Of[Msg any]() Typed[Msg] {
 }
 
 func (t typed[Msg]) NewStream(p ...stream.Processor[Msg, Msg]) stream.Stream {
-	return _stream.Make[Msg, Msg](
-		node.Subprocess(p...),
-	)
+	return NewStream(p...)
 }
 
 func (t typed[Msg]) Bind(

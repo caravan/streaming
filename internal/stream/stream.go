@@ -17,12 +17,6 @@ type stream[Msg, Res any] struct {
 	done chan context.Done
 }
 
-// ReportError messages
-const (
-	ErrAlreadyStarted = "stream already running"
-	ErrAlreadyStopped = "stream already stopped"
-)
-
 // Make builds a Stream. The Stream must be started using the Start method
 func Make[Msg, Res any](p _stream.Processor[Msg, Res]) _stream.Stream {
 	return &stream[Msg, Res]{
@@ -35,7 +29,7 @@ func (s *stream[Msg, Res]) Start() error {
 	s.Lock()
 	if s.isRunning() {
 		s.Unlock()
-		return errors.New(ErrAlreadyStarted)
+		return errors.New(_stream.ErrAlreadyStarted)
 	}
 	s.done = make(chan context.Done)
 	s.Unlock()
@@ -105,7 +99,7 @@ func (s *stream[_, _]) Stop() error {
 	defer s.Unlock()
 
 	if !s.isRunning() {
-		return errors.New(ErrAlreadyStopped)
+		return errors.New(_stream.ErrAlreadyStopped)
 	}
 	close(s.done)
 	s.done = nil

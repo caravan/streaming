@@ -30,7 +30,12 @@ type (
 	Stop struct{}
 )
 
-const ErrStopRequested = "stream stop requested"
+// Error messages
+const (
+	ErrAlreadyStarted = "stream already running"
+	ErrAlreadyStopped = "stream already stopped"
+	ErrStopRequested  = "stream stop requested"
+)
 
 func (Stop) Error() string {
 	return ErrStopRequested

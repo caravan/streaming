@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
 	"github.com/stretchr/testify/assert"
 
-	_table "github.com/caravan/streaming/internal/table"
+	internal "github.com/caravan/streaming/internal/table"
 )
 
 type tableRow struct {
@@ -20,7 +21,7 @@ type tableRow struct {
 func TestUpdater(t *testing.T) {
 	as := assert.New(t)
 
-	tbl, err := _table.Make[string, any]("name", "age")
+	tbl, err := internal.Make[string, any]("name", "age")
 	as.NotNil(tbl)
 	as.Nil(err)
 
@@ -28,7 +29,7 @@ func TestUpdater(t *testing.T) {
 	as.NotNil(getter)
 	as.Nil(err)
 
-	updater, err := _table.MakeUpdater(tbl,
+	updater, err := internal.MakeUpdater(tbl,
 		func(e *tableRow) (string, error) {
 			return e.key, nil
 		},
@@ -78,17 +79,17 @@ func TestUpdater(t *testing.T) {
 	missing := "missing"
 	res, err = sel(missing)
 	as.Nil(res)
-	as.EqualError(err, fmt.Sprintf(_table.ErrKeyNotFound, missing))
+	as.EqualError(err, fmt.Sprintf(table.ErrKeyNotFound, missing))
 }
 
 func TestBadUpdater(t *testing.T) {
 	as := assert.New(t)
 
-	emptyTable, err := _table.Make[string, any]()
+	emptyTable, err := internal.Make[string, any]()
 	as.NotNil(emptyTable)
 	as.Nil(err)
 
-	updater, err := _table.MakeUpdater[*tableRow, string, any](emptyTable,
+	updater, err := internal.MakeUpdater[*tableRow, string, any](emptyTable,
 		func(r *tableRow) (string, error) {
 			if r == nil || r.key == "" {
 				return "", errors.New("key-error")
@@ -100,17 +101,17 @@ func TestBadUpdater(t *testing.T) {
 		}),
 	)
 	as.Nil(updater)
-	as.Errorf(err, _table.ErrColumnNotFound, "explode")
+	as.Errorf(err, table.ErrColumnNotFound, "explode")
 }
 
 func TestBadSelectors(t *testing.T) {
 	as := assert.New(t)
 
-	tbl, err := _table.Make[string, any]("explode")
+	tbl, err := internal.Make[string, any]("explode")
 	as.NotNil(tbl)
 	as.Nil(err)
 
-	updater, _ := _table.MakeUpdater[*tableRow, string, any](tbl,
+	updater, _ := internal.MakeUpdater[*tableRow, string, any](tbl,
 		func(r *tableRow) (string, error) {
 			if r == nil || r.key == "" {
 				return "", errors.New("key-error")

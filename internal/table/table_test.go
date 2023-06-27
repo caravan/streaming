@@ -7,13 +7,13 @@ import (
 	"github.com/caravan/streaming/table"
 	"github.com/stretchr/testify/assert"
 
-	_table "github.com/caravan/streaming/internal/table"
+	internal "github.com/caravan/streaming/internal/table"
 )
 
 func TestTable(t *testing.T) {
 	as := assert.New(t)
 
-	tbl, err := _table.Make[string, any]("name", "age")
+	tbl, err := internal.Make[string, any]("name", "age")
 	as.NotNil(tbl)
 	as.Nil(err)
 
@@ -43,33 +43,33 @@ func TestTable(t *testing.T) {
 	missing := "missing"
 	res, err = getter(missing)
 	as.Nil(res)
-	as.EqualError(err, fmt.Sprintf(_table.ErrKeyNotFound, missing))
+	as.EqualError(err, fmt.Sprintf(table.ErrKeyNotFound, missing))
 }
 
 func TestBadTable(t *testing.T) {
 	as := assert.New(t)
-	tbl, err := _table.Make[string, any]("column-1", "column-2", "column-1")
+	tbl, err := internal.Make[string, any]("column-1", "column-2", "column-1")
 	as.Nil(tbl)
-	as.Errorf(err, _table.ErrDuplicateColumnName, "column-1")
+	as.Errorf(err, table.ErrDuplicateColumnName, "column-1")
 }
 
 func TestMissingColumn(t *testing.T) {
 	as := assert.New(t)
 
-	tbl, err := _table.Make[string, any]("column-1", "column-2")
+	tbl, err := internal.Make[string, any]("column-1", "column-2")
 	as.NotNil(tbl)
 	as.Nil(err)
 
 	as.Equal([]table.ColumnName{"column-1", "column-2"}, tbl.Columns())
 	sel, err := tbl.Getter("not-found")
 	as.Nil(sel)
-	as.EqualError(err, fmt.Sprintf(_table.ErrColumnNotFound, "not-found"))
+	as.EqualError(err, fmt.Sprintf(table.ErrColumnNotFound, "not-found"))
 }
 
 func TestCompetingSetters(t *testing.T) {
 	as := assert.New(t)
 
-	tbl, _ := _table.Make[string, any]("name", "age")
+	tbl, _ := internal.Make[string, any]("name", "age")
 	allSetter, _ := tbl.Setter("name", "age")
 	getter, _ := tbl.Getter("name", "age")
 
@@ -102,25 +102,25 @@ func TestCompetingSetters(t *testing.T) {
 func TestBadSetter(t *testing.T) {
 	as := assert.New(t)
 
-	tbl, err := _table.Make[string, any]("column-1", "column-2")
+	tbl, err := internal.Make[string, any]("column-1", "column-2")
 	as.NotNil(tbl)
 	as.Nil(err)
 
 	s, err := tbl.Setter("column-1", "column-2", "column-1")
 	as.Nil(s)
-	as.Errorf(err, _table.ErrDuplicateColumnName, "column-1")
+	as.Errorf(err, table.ErrDuplicateColumnName, "column-1")
 
 	s, err = tbl.Setter("column-1", "column-2", "column-3")
 	as.Nil(s)
-	as.EqualError(err, fmt.Sprintf(_table.ErrColumnNotFound, "column-3"))
+	as.EqualError(err, fmt.Sprintf(table.ErrColumnNotFound, "column-3"))
 
 	s, err = tbl.Setter("column-1", "column-2")
 	as.NotNil(s)
 	as.Nil(err)
 
 	err = s("some-key", "too few")
-	as.Errorf(err, fmt.Sprintf(_table.ErrValueCountRequired, 2, 1))
+	as.Errorf(err, fmt.Sprintf(table.ErrValueCountRequired, 2, 1))
 
 	err = s("some-key", "one", "too", "many")
-	as.Errorf(err, fmt.Sprintf(_table.ErrValueCountRequired, 2, 3))
+	as.Errorf(err, fmt.Sprintf(table.ErrValueCountRequired, 2, 3))
 }
