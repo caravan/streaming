@@ -18,12 +18,9 @@ type (
 	// ColumnName is exactly what you think it is
 	ColumnName string
 
-	// Relation describes a set of associated Values
-	Relation[Value any] []Value
-
 	// Getter is a function that is capable of retrieving a pre-defined set of
 	// column Values from a Table based on the provided Key
-	Getter[Key comparable, Value any] func(Key) (Relation[Value], error)
+	Getter[Key comparable, Value any] func(Key) ([]Value, error)
 
 	// Setter is a function that is capable of updating a pre-defined set of
 	// column Values in a Table based on the provided Key

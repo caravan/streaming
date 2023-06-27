@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/caravan/streaming/table"
 	"github.com/caravan/streaming/table/column"
 	"github.com/stretchr/testify/assert"
 
 	_table "github.com/caravan/streaming/internal/table"
 )
+
+type tableRow struct {
+	key  string
+	name string
+	age  int
+}
 
 func TestUpdater(t *testing.T) {
 	as := assert.New(t)
@@ -47,7 +52,7 @@ func TestUpdater(t *testing.T) {
 	})
 	as.Nil(err)
 	res, _ := getter(firstID)
-	as.Equal(table.Relation[any]{"bill", 42}, res)
+	as.Equal([]any{"bill", 42}, res)
 
 	err = updater.Update(&tableRow{
 		key:  secondID,
@@ -56,7 +61,7 @@ func TestUpdater(t *testing.T) {
 	})
 	as.Nil(err)
 	res, _ = getter(secondID)
-	as.Equal(table.Relation[any]{"carol", 47}, res)
+	as.Equal([]any{"carol", 47}, res)
 
 	sel, err := tbl.Getter("age", "name")
 	as.NotNil(sel)
@@ -64,11 +69,11 @@ func TestUpdater(t *testing.T) {
 
 	res, err = sel(secondID)
 	as.Nil(err)
-	as.Equal(table.Relation[any]{47, "carol"}, res)
+	as.Equal([]any{47, "carol"}, res)
 
 	res, err = sel(firstID)
 	as.Nil(err)
-	as.Equal(table.Relation[any]{42, "bill"}, res)
+	as.Equal([]any{42, "bill"}, res)
 
 	missing := "missing"
 	res, err = sel(missing)

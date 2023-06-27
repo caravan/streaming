@@ -12,7 +12,7 @@ type table[Key comparable, Value any] struct {
 	sync.RWMutex
 	names   []_table.ColumnName
 	indexes map[_table.ColumnName]int
-	rows    map[Key]_table.Relation[Value]
+	rows    map[Key][]Value
 }
 
 // ReportError messages
@@ -36,7 +36,7 @@ func Make[Key comparable, Value any](
 	return &table[Key, Value]{
 		names:   c,
 		indexes: indexes,
-		rows:    map[Key]_table.Relation[Value]{},
+		rows:    map[Key][]Value{},
 	}, nil
 }
 
@@ -51,12 +51,12 @@ func (t *table[Key, Value]) Getter(
 	if err != nil {
 		return nil, err
 	}
-	return func(k Key) (_table.Relation[Value], error) {
+	return func(k Key) ([]Value, error) {
 		t.RLock()
 		defer t.RUnlock()
 
 		if e, ok := t.rows[k]; ok {
-			res := make(_table.Relation[Value], len(indexes))
+			res := make([]Value, len(indexes))
 			for out, in := range indexes {
 				res[out] = e[in]
 			}
@@ -86,7 +86,7 @@ func (t *table[Key, Value]) Setter(
 		}
 		e, ok := t.rows[k]
 		if !ok {
-			e = make(_table.Relation[Value], len(t.names))
+			e = make([]Value, len(t.names))
 		}
 		for in, out := range indexes {
 			e[out] = v[in]

@@ -47,7 +47,7 @@ func (t *updater[Msg, _, Value]) Update(msg Msg) error {
 	if err != nil {
 		return err
 	}
-	row := make(_table.Relation[Value], len(t.columns))
+	row := make([]Value, len(t.columns))
 	for i, s := range t.columns {
 		v, err := s.Select(msg)
 		if err != nil {

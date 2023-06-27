@@ -10,12 +10,6 @@ import (
 	_table "github.com/caravan/streaming/internal/table"
 )
 
-type tableRow struct {
-	key  string
-	name string
-	age  int
-}
-
 func TestTable(t *testing.T) {
 	as := assert.New(t)
 
@@ -41,10 +35,10 @@ func TestTable(t *testing.T) {
 	as.Nil(err)
 
 	res, _ := getter(firstID)
-	as.Equal(table.Relation[any]{"bill", 42}, res)
+	as.Equal([]any{"bill", 42}, res)
 
 	res, _ = getter(secondID)
-	as.Equal(table.Relation[any]{"carol", 47}, res)
+	as.Equal([]any{"carol", 47}, res)
 
 	missing := "missing"
 	res, err = getter(missing)
@@ -70,6 +64,39 @@ func TestMissingColumn(t *testing.T) {
 	sel, err := tbl.Getter("not-found")
 	as.Nil(sel)
 	as.EqualError(err, fmt.Sprintf(_table.ErrColumnNotFound, "not-found"))
+}
+
+func TestCompetingSetters(t *testing.T) {
+	as := assert.New(t)
+
+	tbl, _ := _table.Make[string, any]("name", "age")
+	allSetter, _ := tbl.Setter("name", "age")
+	getter, _ := tbl.Getter("name", "age")
+
+	nameSetter, err := tbl.Setter("name")
+	as.NotNil(nameSetter)
+	as.Nil(err)
+
+	ageSetter, err := tbl.Setter("age")
+	as.NotNil(ageSetter)
+	as.Nil(err)
+
+	as.Nil(allSetter("1", "bob", 42))
+	as.Nil(allSetter("2", "june", 36))
+
+	row, _ := getter("1")
+	as.Equal([]any{"bob", 42}, row)
+	row, _ = getter("2")
+	as.Equal([]any{"june", 36}, row)
+
+	as.Nil(nameSetter("1", "robert"))
+	as.Nil(ageSetter("2", 41))
+
+	row, _ = getter("1")
+	as.Equal([]any{"robert", 42}, row)
+
+	row, _ = getter("2")
+	as.Equal([]any{"june", 41}, row)
 }
 
 func TestBadSetter(t *testing.T) {
