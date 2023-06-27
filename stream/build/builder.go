@@ -4,7 +4,6 @@ import (
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
-	"github.com/caravan/streaming/table"
 
 	_stream "github.com/caravan/streaming/internal/stream"
 )
@@ -100,14 +99,6 @@ func (b *builder[Msg]) ReduceFrom(
 	return b.processor(node.ReduceFrom(fn, init))
 }
 
-func (b *builder[Msg]) TableLookup(
-	t table.Table[Msg, Msg], c table.ColumnName, k table.KeySelector[Msg],
-) Builder[Msg] {
-	return b.extend(func() (stream.Processor[Msg, Msg], error) {
-		return node.TableLookup[Msg, Msg](t, c, k)
-	})
-}
-
 func (b *builder[Msg]) Processor(p stream.Processor[Msg, Msg]) Builder[Msg] {
 	return b.processor(p)
 }
@@ -122,10 +113,6 @@ func (b *builder[Msg]) Sink(p stream.Processor[Msg, Msg]) TerminalBuilder[Msg] {
 
 func (b *builder[Msg]) TopicProducer(t topic.Topic[Msg]) Builder[Msg] {
 	return b.processor(node.TopicProducer[Msg](t))
-}
-
-func (b *builder[Msg]) TableUpdater(t table.Table[Msg, Msg]) Builder[Msg] {
-	return b.processor(node.TableUpdater[Msg](t))
 }
 
 func (b *builder[Msg]) Build() (stream.Processor[Msg, Msg], error) {

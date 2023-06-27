@@ -14,10 +14,19 @@ func NewStream[Msg any](p ...stream.Processor[Msg, Msg]) stream.Stream {
 	return _stream.Make(node.Subprocess(p...))
 }
 
-// NewTable instantiates a new Table, given a key selector and a set of column
-// definitions
-func NewTable[Msg any](
-	k table.KeySelector[Msg], c ...table.Column[Msg, Msg],
-) table.Table[Msg, Msg] {
-	return _table.Make(k, c...)
+// NewTable instantiates a new Table given a set of column names
+func NewTable[Key comparable, Value any](
+	c ...table.ColumnName,
+) (table.Table[Key, Value], error) {
+	return _table.Make[Key, Value](c...)
+}
+
+// NewTableUpdater instantiates a new table Updater given a Table and a set of
+// Key and Column Selectors
+func NewTableUpdater[Msg any, Key comparable, Value any](
+	t table.Table[Key, Value],
+	k table.KeySelector[Msg, Key],
+	c ...table.ColumnSelector[Msg, Value],
+) (table.Updater[Msg, Key, Value], error) {
+	return _table.MakeUpdater[Msg, Key, Value](t, k, c...)
 }

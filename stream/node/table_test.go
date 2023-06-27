@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/caravan/essentials/id"
 	"github.com/caravan/streaming/stream/context"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/caravan/streaming/table"
@@ -15,25 +14,78 @@ import (
 	_table "github.com/caravan/streaming/internal/table"
 )
 
+type row struct {
+	id    string
+	name  string
+	value string
+}
+
+func makeTestTable() (
+	table.Table[string, string],
+	table.Updater[*row, string, string],
+) {
+	tbl, _ := _table.Make[string, string]("id", "name", "value")
+
+	updater, _ := _table.MakeUpdater(tbl,
+		func(r *row) (string, error) {
+			return r.id, nil
+		},
+		column.Make("id", func(r *row) (string, error) {
+			return r.id, nil
+		}),
+		column.Make("name", func(r *row) (string, error) {
+			return r.name, nil
+		}),
+		column.Make("value", func(r *row) (string, error) {
+			return r.value, nil
+		}),
+	)
+
+	return tbl, updater
+}
+
+func TestTableUpdater(t *testing.T) {
+	as := assert.New(t)
+
+	tbl, u := makeTestTable()
+
+	updater := node.TableUpdater(u)
+	lookup, _ := node.TableLookup(tbl, "value",
+		func(r *row) (string, error) {
+			return r.id, nil
+		},
+	)
+
+	tester := node.Bind(updater, lookup)
+	done := make(chan context.Done)
+	in := make(chan *row)
+	out := make(chan string)
+
+	tester.Start(context.Make(done, make(chan error), in, out))
+	in <- &row{
+		id:    "some id",
+		name:  "some name",
+		value: "some value",
+	}
+
+	as.Equal("some value", <-out)
+	close(done)
+}
+
 func TestTableLookup(t *testing.T) {
 	as := assert.New(t)
 
-	theID := id.New()
-	tbl := _table.Make[string, string](
-		func(_ string) (table.Key, error) {
-			return theID, nil
-		},
-		column.Make("*", func(s string) (string, error) {
-			return s, nil
-		}),
-	)
-	res, err := tbl.Update("some value")
+	tbl, updater := makeTestTable()
+	err := updater.Update(&row{
+		id:    "some id",
+		name:  "some name",
+		value: "some value",
+	})
 	as.Nil(err)
-	as.Equal(table.Relation[string]{"some value"}, res)
 
-	lookup, err := node.TableLookup(tbl, "*",
-		func(_ string) (table.Key, error) {
-			return theID, nil
+	lookup, err := node.TableLookup(tbl, "value",
+		func(k string) (string, error) {
+			return k, nil
 		},
 	)
 	as.NotNil(lookup)
@@ -44,7 +96,7 @@ func TestTableLookup(t *testing.T) {
 	out := make(chan string)
 
 	lookup.Start(context.Make(done, make(chan error), in, out))
-	in <- "anything"
+	in <- "some id"
 	as.Equal("some value", <-out)
 	close(done)
 }
@@ -52,10 +104,10 @@ func TestTableLookup(t *testing.T) {
 func TestLookupCreateError(t *testing.T) {
 	as := assert.New(t)
 
-	tbl := _table.Make[any, any](nil)
+	tbl, _ := _table.Make[string, any]("not-missing")
 	lookup, err := node.TableLookup(tbl, "missing",
-		func(_ any) (table.Key, error) {
-			return id.Nil, nil
+		func(_ any) (string, error) {
+			return "", nil
 		},
 	)
 	as.Nil(lookup)
@@ -65,20 +117,13 @@ func TestLookupCreateError(t *testing.T) {
 func TestLookupProcessError(t *testing.T) {
 	as := assert.New(t)
 
-	theKey := id.New()
-	tbl := _table.Make[any, any](
-		func(_ any) (table.Key, error) {
-			return theKey, nil
-		},
-		column.Make("*", func(e any) (any, error) {
-			return e, nil
-		}),
-	)
+	theKey := "the key"
+	tbl, _ := _table.Make[string, any]("*")
 
 	lookup, e := node.TableLookup(tbl, "*",
-		func(e any) (table.Key, error) {
+		func(e any) (string, error) {
 			if err, ok := e.(error); ok {
-				return id.Nil, err
+				return "", err
 			}
 			return theKey, nil
 		},

@@ -16,10 +16,7 @@ func TestColumn(t *testing.T) {
 	})
 
 	as.Equal(table.ColumnName("some-col"), c.Name())
-
-	sel := c.Selector()
-	as.NotNil(sel)
-	res, err := sel("anything")
+	res, err := c.Select("anything")
 	as.Equal("hello", res)
 	as.Nil(err)
 }

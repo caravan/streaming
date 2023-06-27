@@ -4,7 +4,6 @@ import (
 	"github.com/caravan/essentials/topic"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
-	"github.com/caravan/streaming/table"
 )
 
 type (
@@ -43,14 +42,6 @@ type (
 		// underlying reduction
 		ReduceFrom(node.Reducer[Msg, Msg], Msg) Builder[Msg]
 
-		// TableLookup retrieves a Key of the messages from this Builder,
-		// and uses that key to perform a lookup on the provided Table.
-		// If a message is retrieved from that table, the value in the
-		// specified column is forwarded
-		TableLookup(
-			table.Table[Msg, Msg], table.ColumnName, table.KeySelector[Msg],
-		) Builder[Msg]
-
 		// Processor adds the specified Processor to this Builder
 		Processor(stream.Processor[Msg, Msg]) Builder[Msg]
 
@@ -69,11 +60,6 @@ type (
 		// on the specified Topic. So all messages that this Stream produces
 		// will end up in that Topic. This is a terminal in the graph
 		TopicProducer(topic.Topic[Msg]) Builder[Msg]
-
-		// TableUpdater adds a SinkProcessor to this Builder that is based
-		// on the specified Table. So all messages that this Stream produces
-		// will end up in that Table. This is a terminal in the graph
-		TableUpdater(table.Table[Msg, Msg]) Builder[Msg]
 	}
 
 	// TerminalBuilder is a sub-portion of the Builder interface that is

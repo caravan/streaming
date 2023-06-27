@@ -2,11 +2,9 @@ package streaming
 
 import (
 	"github.com/caravan/essentials/topic"
+	_stream "github.com/caravan/streaming/internal/stream"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/node"
-	"github.com/caravan/streaming/table"
-
-	_stream "github.com/caravan/streaming/internal/stream"
 )
 
 type (
@@ -32,10 +30,10 @@ type (
 		) stream.Processor[Msg, Msg]
 		Sink() stream.Processor[Msg, Msg]
 		Subprocess(...stream.Processor[Msg, Msg]) stream.Processor[Msg, Msg]
-		TableLookup(
-			table.Table[Msg, Msg], table.ColumnName, table.KeySelector[Msg],
-		) (stream.Processor[Msg, Msg], error)
-		TableUpdater(table.Table[Msg, Msg]) stream.Processor[Msg, Msg]
+		//TableLookup(
+		//	table.Table[Msg, Msg], table.ColumnName, table.KeySelector[Msg],
+		//) (stream.Processor[Msg, Msg], error)
+		//TableUpdater(table.Table[Msg, Msg]) stream.Processor[Msg, Msg]
 		TopicConsumer(topic.Topic[Msg]) stream.Processor[Msg, Msg]
 		TopicProducer(topic.Topic[Msg]) stream.Processor[Msg, Msg]
 	}
@@ -114,18 +112,6 @@ func (t typed[Msg]) Subprocess(
 	p ...stream.Processor[Msg, Msg],
 ) stream.Processor[Msg, Msg] {
 	return node.Subprocess(p...)
-}
-
-func (t typed[Msg]) TableLookup(
-	tbl table.Table[Msg, Msg], c table.ColumnName, k table.KeySelector[Msg],
-) (stream.Processor[Msg, Msg], error) {
-	return node.TableLookup(tbl, c, k)
-}
-
-func (t typed[Msg]) TableUpdater(
-	tbl table.Table[Msg, Msg],
-) stream.Processor[Msg, Msg] {
-	return node.TableUpdater(tbl)
 }
 
 func (t typed[Msg]) TopicConsumer(
