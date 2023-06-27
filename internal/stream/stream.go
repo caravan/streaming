@@ -4,32 +4,31 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/context"
 	"github.com/caravan/streaming/stream/node"
-
-	_stream "github.com/caravan/streaming/stream"
 )
 
-// stream is the internal implementation of a stream
-type stream[Msg, Res any] struct {
+// Stream is the internal implementation of a stream
+type Stream[Msg, Res any] struct {
 	sync.Mutex
-	root _stream.Processor[Msg, Res]
+	root stream.Processor[Msg, Res]
 	done chan context.Done
 }
 
 // Make builds a Stream. The Stream must be started using the Start method
-func Make[Msg, Res any](p _stream.Processor[Msg, Res]) _stream.Stream {
-	return &stream[Msg, Res]{
+func Make[Msg, Res any](p stream.Processor[Msg, Res]) stream.Stream {
+	return &Stream[Msg, Res]{
 		root: p,
 	}
 }
 
 // Start kicks off the background routine for this stream
-func (s *stream[Msg, Res]) Start() error {
+func (s *Stream[Msg, Res]) Start() error {
 	s.Lock()
 	if s.isRunning() {
 		s.Unlock()
-		return errors.New(_stream.ErrAlreadyStarted)
+		return errors.New(stream.ErrAlreadyStarted)
 	}
 	s.done = make(chan context.Done)
 	s.Unlock()
@@ -41,7 +40,7 @@ func (s *stream[Msg, Res]) Start() error {
 			case <-s.done:
 				return
 			case e := <-err:
-				if _, ok := e.(_stream.Stop); ok {
+				if _, ok := e.(stream.Stop); ok {
 					s.Lock()
 					close(s.done)
 					s.Unlock()
@@ -74,13 +73,13 @@ func (s *stream[Msg, Res]) Start() error {
 }
 
 // IsRunning returns whether the stream is actively running
-func (s *stream[_, _]) IsRunning() bool {
+func (s *Stream[_, _]) IsRunning() bool {
 	s.Lock()
 	defer s.Unlock()
 	return s.isRunning()
 }
 
-func (s *stream[_, _]) isRunning() bool {
+func (s *Stream[_, _]) isRunning() bool {
 	if s.done == nil {
 		return false
 	}
@@ -94,12 +93,12 @@ func (s *stream[_, _]) isRunning() bool {
 }
 
 // Stop the stream if it's running
-func (s *stream[_, _]) Stop() error {
+func (s *Stream[_, _]) Stop() error {
 	s.Lock()
 	defer s.Unlock()
 
 	if !s.isRunning() {
-		return errors.New(_stream.ErrAlreadyStopped)
+		return errors.New(stream.ErrAlreadyStopped)
 	}
 	close(s.done)
 	s.done = nil
