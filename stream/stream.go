@@ -25,6 +25,10 @@ type (
 	// Processor is a function that processes part of a Stream topology
 	Processor[Msg, Res any] func(*context.Context[Msg, Res])
 
+	Source struct{}
+
+	Sink struct{}
+
 	// Stop is a special Error that instructs the stream to completely
 	// stop operating. This should only be used in exceptional cases
 	Stop struct{}

@@ -12,14 +12,17 @@ import (
 // Stream is the internal implementation of a stream
 type Stream[Msg, Res any] struct {
 	sync.Mutex
-	root stream.Processor[Msg, Res]
+	root stream.Processor[stream.Source, Res]
 	done chan context.Done
 }
 
 // Make builds a Stream. The Stream must be started using the Start method
-func Make[Msg, Res any](p stream.Processor[Msg, Res]) stream.Stream {
+func Make[Msg, Res any](
+	source stream.Processor[stream.Source, Msg],
+	rest stream.Processor[Msg, Res],
+) stream.Stream {
 	return &Stream[Msg, Res]{
-		root: p,
+		root: node.Bind(source, rest),
 	}
 }
 
@@ -50,8 +53,8 @@ func (s *Stream[Msg, Res]) Start() error {
 	}()
 
 	go func() {
-		in := make(chan Msg)
-		out := make(chan Res)
+		in := make(chan stream.Source)
+		out := make(chan stream.Sink)
 
 		loop := node.Bind(
 			s.root,
@@ -60,12 +63,11 @@ func (s *Stream[Msg, Res]) Start() error {
 
 		loop.Start(context.Make(s.done, err, in, out))
 
-		var zero Msg
 		for {
 			select {
 			case <-s.done:
 				return
-			case in <- zero:
+			case in <- stream.Source{}:
 			}
 		}
 	}()

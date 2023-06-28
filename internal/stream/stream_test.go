@@ -12,10 +12,17 @@ import (
 	internal "github.com/caravan/streaming/internal/stream"
 )
 
+func makeGeneratingStream(value any) stream.Stream {
+	return internal.Make(
+		node.Generate(func() any { return value }),
+		node.Forward[any],
+	)
+}
+
 func TestStreamCreate(t *testing.T) {
 	as := assert.New(t)
 
-	s := internal.Make[any, any](node.Subprocess[any]())
+	s := makeGeneratingStream("hello")
 	as.NotNil(s)
 	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
 }
@@ -23,7 +30,7 @@ func TestStreamCreate(t *testing.T) {
 func TestStreamStart(t *testing.T) {
 	as := assert.New(t)
 
-	s := internal.Make[any, any](node.Subprocess[any]())
+	s := makeGeneratingStream("hello")
 	as.Nil(s.Start())
 	as.EqualError(s.Start(), stream.ErrAlreadyStarted)
 }
@@ -31,14 +38,14 @@ func TestStreamStart(t *testing.T) {
 func TestStreamStop(t *testing.T) {
 	as := assert.New(t)
 
-	s := internal.Make[any, any](node.Subprocess[any]())
+	s := makeGeneratingStream("hello")
 	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
 }
 
 func TestStreamStartStop(t *testing.T) {
 	as := assert.New(t)
 
-	s := internal.Make[any, any](node.Subprocess[any]())
+	s := makeGeneratingStream("hello")
 	as.Nil(s.Start())
 	as.EqualError(s.Start(), stream.ErrAlreadyStarted)
 
@@ -51,6 +58,9 @@ func TestStreamError(t *testing.T) {
 	as.Equal(stream.Stop{}.Error(), stream.ErrStopRequested)
 	var s stream.Stream
 	s = internal.Make[any](
+		node.Generate(func() any {
+			return "hello"
+		}),
 		func(c *context.Context[any, any]) {
 			as.True(s.IsRunning())
 			c.ReportError(stream.Stop{})

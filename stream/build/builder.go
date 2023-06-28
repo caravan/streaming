@@ -9,45 +9,39 @@ import (
 )
 
 type builder[Msg any] struct {
-	prev  []*builder[Msg]
-	build Deferred[Msg]
+	prev   []*builder[Msg]
+	build  Deferred[Msg]
+	source stream.Processor[stream.Source, Msg]
 }
 
-func makeInitial[Msg any]() *builder[Msg] {
+func makeInitial[Msg any](
+	source stream.Processor[stream.Source, Msg],
+) *builder[Msg] {
 	return &builder[Msg]{
-		prev: []*builder[Msg]{},
+		prev:   []*builder[Msg]{},
+		source: source,
 	}
 }
 
 // Source initiates a new Builder, with its messages originating in the provided
 // SourceProcessor
-func Source[Msg any](p stream.Processor[Msg, Msg]) Builder[Msg] {
-	return makeInitial[Msg]().processor(p)
+func Source[Msg any](p stream.Processor[stream.Source, Msg]) Builder[Msg] {
+	return makeInitial[Msg](p)
 }
 
 // TopicConsumer initiates a new Builder, with its messages originating in the
 // provided Topic
 func TopicConsumer[Msg any](t topic.Topic[Msg]) Builder[Msg] {
-	return Source(
-		node.Bind(
-			node.Map(func(msg Msg) any { return msg }),
-			node.TopicConsumer(t),
-		),
-	)
+	c := node.TopicConsumer(t)
+	return Source(c)
 }
 
 // Merge initiates a new Builder, with its messages originating from the
 // provided Builders
 func Merge[Msg any](builders ...Builder[Msg]) Builder[Msg] {
-	return makeInitial[Msg]().extend(
-		func() (stream.Processor[Msg, Msg], error) {
-			p, err := buildProcessors(builders...)
-			if err != nil {
-				return nil, err
-			}
-			return node.Merge(p...), nil
-		},
-	)
+	p := buildProcessors(builders...)
+	m := node.Merge(p...)
+	return makeInitial[Msg](m)
 }
 
 // Join initiates a new Builder, with its messages originating from the
@@ -58,15 +52,9 @@ func Join[Msg any](
 	pred node.BinaryPredicate[Msg, Msg],
 	joiner node.BinaryOperator[Msg, Msg, Msg],
 ) Builder[Msg] {
-	return makeInitial[Msg]().extend(
-		func() (stream.Processor[Msg, Msg], error) {
-			p, err := buildProcessors(l, r)
-			if err != nil {
-				return nil, err
-			}
-			return node.Join(p[0], p[1], pred, joiner), nil
-		},
-	)
+	p := buildProcessors(l, r)
+	j := node.Join(p[0], p[1], pred, joiner)
+	return makeInitial[Msg](j)
 }
 
 func (b *builder[Msg]) Merge(builder ...Builder[Msg]) Builder[Msg] {
@@ -82,21 +70,25 @@ func (b *builder[Msg]) Join(
 }
 
 func (b *builder[Msg]) Filter(pred node.Predicate[Msg]) Builder[Msg] {
-	return b.processor(node.Filter(pred))
+	f := node.Filter(pred)
+	return b.processor(f)
 }
 
 func (b *builder[Msg]) Map(fn node.Mapper[Msg, Msg]) Builder[Msg] {
-	return b.processor(node.Map(fn))
+	m := node.Map(fn)
+	return b.processor(m)
 }
 
 func (b *builder[Msg]) Reduce(fn node.Reducer[Msg, Msg]) Builder[Msg] {
-	return b.processor(node.Reduce(fn))
+	r := node.Reduce(fn)
+	return b.processor(r)
 }
 
 func (b *builder[Msg]) ReduceFrom(
 	fn node.Reducer[Msg, Msg], init Msg,
 ) Builder[Msg] {
-	return b.processor(node.ReduceFrom(fn, init))
+	r := node.ReduceFrom(fn, init)
+	return b.processor(r)
 }
 
 func (b *builder[Msg]) Processor(p stream.Processor[Msg, Msg]) Builder[Msg] {
@@ -107,36 +99,29 @@ func (b *builder[Msg]) Deferred(fn Deferred[Msg]) Builder[Msg] {
 	return b.extend(fn)
 }
 
-func (b *builder[Msg]) Sink(p stream.Processor[Msg, Msg]) TerminalBuilder[Msg] {
-	return b.processor(node.Bind(p, node.Sink[Msg]()))
-}
-
 func (b *builder[Msg]) TopicProducer(t topic.Topic[Msg]) Builder[Msg] {
-	return b.processor(node.TopicProducer[Msg](t))
+	p := node.TopicProducer[Msg](t)
+	return b.processor(p)
 }
 
-func (b *builder[Msg]) Build() (stream.Processor[Msg, Msg], error) {
+func (b *builder[Msg]) buildRest() stream.Processor[Msg, Msg] {
 	in := append(b.prev, b)
 	out := make([]stream.Processor[Msg, Msg], 0, len(in))
 	for _, e := range in {
 		if e.build == nil {
 			continue
 		}
-		eb, err := e.build()
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, eb)
+		out = append(out, e.build())
 	}
-	return node.Subprocess[Msg](out...), nil
+	return node.Subprocess[Msg](out...)
 }
 
-func (b *builder[_]) Stream() (stream.Stream, error) {
-	p, err := b.Build()
-	if err != nil {
-		return nil, err
-	}
-	return internal.Make(p), nil
+func (b *builder[Msg]) Build() stream.Processor[stream.Source, Msg] {
+	return node.Bind(b.source, b.buildRest())
+}
+
+func (b *builder[_]) Stream() stream.Stream {
+	return internal.Make(b.source, b.buildRest())
 }
 
 func (b *builder[Msg]) extend(build Deferred[Msg]) *builder[Msg] {
@@ -147,21 +132,17 @@ func (b *builder[Msg]) extend(build Deferred[Msg]) *builder[Msg] {
 }
 
 func (b *builder[Msg]) processor(p stream.Processor[Msg, Msg]) *builder[Msg] {
-	return b.extend(func() (stream.Processor[Msg, Msg], error) {
-		return p, nil
+	return b.extend(func() stream.Processor[Msg, Msg] {
+		return p
 	})
 }
 
 func buildProcessors[Msg any](
 	in ...Builder[Msg],
-) ([]stream.Processor[Msg, Msg], error) {
-	out := make([]stream.Processor[Msg, Msg], 0, len(in))
+) []stream.Processor[stream.Source, Msg] {
+	out := make([]stream.Processor[stream.Source, Msg], 0, len(in))
 	for _, b := range in {
-		eb, err := b.Build()
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, eb)
+		out = append(out, b.Build())
 	}
-	return out, nil
+	return out
 }

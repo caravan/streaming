@@ -50,12 +50,6 @@ type (
 		// built or instantiated as a Stream
 		Deferred(Deferred[Msg]) Builder[Msg]
 
-		// Sink adds a SinkProcessor to this Builder. Because a
-		// SinkProcessor is considered a terminal in the graph, the
-		// Builder that is returned only exposes the Build and Stream
-		// methods
-		Sink(stream.Processor[Msg, Msg]) TerminalBuilder[Msg]
-
 		// TopicProducer adds a SinkProcessor to this Builder that is based
 		// on the specified Topic. So all messages that this Stream produces
 		// will end up in that Topic. This is a terminal in the graph
@@ -67,13 +61,13 @@ type (
 	// Stream that can be used to activate a topology
 	TerminalBuilder[Msg any] interface {
 		// Build returns a fully realized Processor based on this Builder
-		Build() (stream.Processor[Msg, Msg], error)
+		Build() stream.Processor[stream.Source, Msg]
 
 		// Stream returns a fully realized Stream based on this Builder
-		Stream() (stream.Stream, error)
+		Stream() stream.Stream
 	}
 
 	// Deferred is a function signature that can be used to register a
 	// Processor instantiator, to be performed at Build time
-	Deferred[Msg any] func() (stream.Processor[Msg, Msg], error)
+	Deferred[Msg any] func() stream.Processor[Msg, Msg]
 )

@@ -10,6 +10,8 @@ import (
 	"github.com/caravan/streaming/stream/context"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
+
+	internal "github.com/caravan/streaming/internal/stream"
 )
 
 func TestSubprocessError(t *testing.T) {
@@ -56,15 +58,12 @@ func TestSubprocess(t *testing.T) {
 	inTopic := essentials.NewTopic[string]()
 	outTopic := essentials.NewTopic[string]()
 
-	typed := streaming.Of[string]()
-	sub := typed.Subprocess(
-		typed.TopicConsumer(inTopic),
-		typed.TopicProducer(outTopic),
+	s := internal.Make(
+		node.TopicConsumer(inTopic),
+		node.TopicProducer(outTopic),
 	)
 
-	s := typed.NewStream(sub)
-	_ = s.Start()
-
+	as.Nil(s.Start())
 	p := inTopic.NewProducer()
 	p.Send() <- "hello"
 	p.Close()
@@ -79,17 +78,17 @@ func TestStatefulSubprocess(t *testing.T) {
 
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
-	typed := streaming.Of[int]()
 
-	sub := typed.Subprocess(
-		typed.TopicConsumer(inTopic),
-		typed.Reduce(func(l int, r int) int {
-			return l + r
-		}),
-		typed.TopicProducer(outTopic),
+	s := internal.Make(
+		node.TopicConsumer(inTopic),
+		node.Subprocess(
+			node.Reduce(func(l int, r int) int {
+				return l + r
+			}),
+			node.TopicProducer(outTopic),
+		),
 	)
 
-	s := typed.NewStream(sub)
 	_ = s.Start()
 
 	p := inTopic.NewProducer()

@@ -8,9 +8,11 @@ import (
 
 // TopicConsumer constructs a processor that receives from the provided Topic
 // every time it's invoked by the Stream
-func TopicConsumer[Msg any](t topic.Topic[Msg]) stream.Processor[any, Msg] {
+func TopicConsumer[Msg any](
+	t topic.Topic[Msg],
+) stream.Processor[stream.Source, Msg] {
 	consumer := t.NewConsumer().Receive()
-	return func(c *context.Context[any, Msg]) {
+	return func(c *context.Context[stream.Source, Msg]) {
 		fetchFromTopic := func() (Msg, bool) {
 			select {
 			case <-c.Done:

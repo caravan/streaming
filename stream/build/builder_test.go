@@ -1,7 +1,6 @@
 package build_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/caravan/essentials"
@@ -22,9 +21,8 @@ func TestPump(t *testing.T) {
 	in := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s, err := build.TopicConsumer(in).TopicProducer(out).Stream()
+	s := build.TopicConsumer(in).TopicProducer(out).Stream()
 	as.NotNil(s)
-	as.Nil(err)
 	as.Nil(s.Start())
 
 	p := in.NewProducer()
@@ -48,7 +46,7 @@ func TestFilterMapReduce(t *testing.T) {
 	in := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s, err := build.
+	s := build.
 		TopicConsumer(in).
 		Filter(func(i int) bool {
 			return i%2 == 0
@@ -63,7 +61,6 @@ func TestFilterMapReduce(t *testing.T) {
 		Stream()
 
 	as.NotNil(s)
-	as.Nil(err)
 	as.Nil(s.Start())
 
 	p := in.NewProducer()
@@ -89,7 +86,7 @@ func TestReduceFrom(t *testing.T) {
 	in := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s, err := build.
+	s := build.
 		TopicConsumer(in).
 		ReduceFrom(func(l int, r int) int {
 			return l + r
@@ -98,7 +95,6 @@ func TestReduceFrom(t *testing.T) {
 		Stream()
 
 	as.NotNil(s)
-	as.Nil(err)
 	as.Nil(s.Start())
 
 	p := in.NewProducer()
@@ -122,14 +118,13 @@ func TestProcessor(t *testing.T) {
 	in := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s, err := build.
+	s := build.
 		TopicConsumer(in).
 		Processor(makeNumberProcessor(42)).
 		TopicProducer(out).
 		Stream()
 
 	as.NotNil(s)
-	as.Nil(err)
 	as.Nil(s.Start())
 
 	p := in.NewProducer()
@@ -153,7 +148,7 @@ func TestMerge(t *testing.T) {
 	r := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s, err := build.
+	s := build.
 		TopicConsumer(l).
 		Processor(makeNumberProcessor(42)).
 		Merge(
@@ -165,7 +160,6 @@ func TestMerge(t *testing.T) {
 		Stream()
 
 	as.NotNil(s)
-	as.Nil(err)
 	as.Nil(s.Start())
 
 	lp := l.NewProducer()
@@ -192,25 +186,6 @@ func TestMerge(t *testing.T) {
 	as.Nil(s.Stop())
 }
 
-func TestMergeBuildError(t *testing.T) {
-	as := assert.New(t)
-
-	in := essentials.NewTopic[any]()
-
-	s, err := build.
-		Merge(
-			build.TopicConsumer(in).Deferred(
-				func() (stream.Processor[any, any], error) {
-					return nil, errors.New("error raised")
-				},
-			),
-		).
-		Stream()
-
-	as.Nil(s)
-	as.EqualError(err, "error raised")
-}
-
 func TestJoin(t *testing.T) {
 	as := assert.New(t)
 
@@ -218,7 +193,7 @@ func TestJoin(t *testing.T) {
 	r := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s, err := build.
+	s := build.
 		TopicConsumer(l).
 		Join(
 			build.TopicConsumer(r),
@@ -233,7 +208,6 @@ func TestJoin(t *testing.T) {
 		Stream()
 
 	as.NotNil(s)
-	as.Nil(err)
 	as.Nil(s.Start())
 
 	lp := l.NewProducer()
@@ -252,46 +226,4 @@ func TestJoin(t *testing.T) {
 	rp.Close()
 	c.Close()
 	as.Nil(s.Stop())
-}
-
-func TestJoinBuildError(t *testing.T) {
-	as := assert.New(t)
-
-	l := essentials.NewTopic[int]()
-	r := essentials.NewTopic[int]()
-
-	s, err := build.
-		Join(
-			build.TopicConsumer(l).Deferred(
-				func() (stream.Processor[int, int], error) {
-					return nil, errors.New("error raised")
-				},
-			),
-			build.TopicConsumer(r),
-			func(l int, r int) bool {
-				return true
-			},
-			func(l int, r int) int {
-				return l + r
-			},
-		).
-		Stream()
-
-	as.Nil(s)
-	as.EqualError(err, "error raised")
-}
-
-func TestDeferredError(t *testing.T) {
-	as := assert.New(t)
-
-	in := essentials.NewTopic[any]()
-	s, err := build.
-		TopicConsumer(in).
-		Deferred(func() (stream.Processor[any, any], error) {
-			return nil, errors.New("error raised")
-		}).
-		Stream()
-
-	as.Nil(s)
-	as.EqualError(err, "error raised")
 }

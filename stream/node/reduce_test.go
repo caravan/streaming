@@ -4,13 +4,11 @@ import (
 	"testing"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
-)
 
-func sumReducer(prev int, e int) int {
-	return prev + e
-}
+	internal "github.com/caravan/streaming/internal/stream"
+)
 
 func TestReduce(t *testing.T) {
 	as := assert.New(t)
@@ -18,13 +16,15 @@ func TestReduce(t *testing.T) {
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
 
-	typed := streaming.Of[int]()
-	sub := typed.Subprocess(
-		typed.TopicConsumer(inTopic),
-		typed.Reduce(sumReducer),
-		typed.TopicProducer(outTopic),
+	s := internal.Make(
+		node.TopicConsumer(inTopic),
+		node.Subprocess(
+			node.Reduce(func(prev int, e int) int {
+				return prev + e
+			}),
+			node.TopicProducer(outTopic),
+		),
 	)
-	s := typed.NewStream(sub)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()
@@ -46,13 +46,16 @@ func TestReduceFrom(t *testing.T) {
 
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
-	typed := streaming.Of[int]()
-	sub := typed.Subprocess(
-		typed.TopicConsumer(inTopic),
-		typed.ReduceFrom(sumReducer, 5),
-		typed.TopicProducer(outTopic),
+
+	s := internal.Make(
+		node.TopicConsumer(inTopic),
+		node.Subprocess(
+			node.ReduceFrom(func(prev int, e int) int {
+				return prev + e
+			}, 5),
+			node.TopicProducer(outTopic),
+		),
 	)
-	s := typed.NewStream(sub)
 
 	as.Nil(s.Start())
 	p := inTopic.NewProducer()

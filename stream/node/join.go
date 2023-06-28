@@ -18,40 +18,17 @@ type (
 // provided BinaryPredicate and BinaryOperator. If the predicate fails, nothing
 // is forwarded, otherwise the two processed messages are combined using the join
 // function, and the result is forwarded
-func Join[Msg, Left, Right, Res any](
-	left stream.Processor[Msg, Left],
-	right stream.Processor[Msg, Right],
+func Join[Left, Right, Res any](
+	left stream.Processor[stream.Source, Left],
+	right stream.Processor[stream.Source, Right],
 	predicate BinaryPredicate[Left, Right],
 	joiner BinaryOperator[Left, Right, Res],
-) stream.Processor[Msg, Res] {
-	return func(c *context.Context[Msg, Res]) {
-		leftIn := make(chan Msg)
-		rightIn := make(chan Msg)
+) stream.Processor[stream.Source, Res] {
+	return func(c *context.Context[stream.Source, Res]) {
 		leftOut := make(chan Left)
 		rightOut := make(chan Right)
-		left.Start(context.Make(c.Done, c.Errors, leftIn, leftOut))
-		right.Start(context.Make(c.Done, c.Errors, rightIn, rightOut))
-
-		splitInput := func(msg Msg) bool {
-			select {
-			case <-c.Done:
-				return false
-			case leftIn <- msg:
-				select {
-				case <-c.Done:
-					return false
-				case rightIn <- msg:
-					return true
-				}
-			case rightIn <- msg:
-				select {
-				case <-c.Done:
-					return false
-				case leftIn <- msg:
-					return true
-				}
-			}
-		}
+		left.Start(context.Make(c.Done, c.Errors, c.In, leftOut))
+		right.Start(context.Make(c.Done, c.Errors, c.In, rightOut))
 
 		joinResults := func() (Left, Right, bool) {
 			var leftZero Left
@@ -77,11 +54,7 @@ func Join[Msg, Left, Right, Res any](
 		}
 
 		for {
-			if msg, ok := c.FetchMessage(); !ok {
-				return
-			} else if !splitInput(msg) {
-				return
-			} else if left, right, ok := joinResults(); !ok {
+			if left, right, ok := joinResults(); !ok {
 				return
 			} else if !predicate(left, right) {
 				continue

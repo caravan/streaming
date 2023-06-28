@@ -14,62 +14,70 @@ Creates a Producer and two Consumers, each of which consumes from the Producer i
 package main
 
 import (
-    "fmt"
-    "math/rand"
-	
-    "github.com/caravan/essentials"
-    "github.com/caravan/streaming/stream/build"
+	"fmt"
+	"math/rand"
+
+	"github.com/caravan/essentials"
+	"github.com/caravan/streaming/stream/build"
 )
 
 func main() {
-    // Create new topics with permanent retention
-    left := essentials.NewTopic[int]()
-    right := essentials.NewTopic[int]()
-    out := essentials.NewTopic[int]()
-	
-    s, _ := build.
-        TopicConsumer(left).
-        Filter(func(m int) bool {
-            // Filter out numbers greater than or equal to 200
-            return m < 200
-        }).
-        Join(
-            build.
-                TopicConsumer(right).
-                Filter(func(m int) bool {
-                    // Filter out numbers less than or equal to 100
-                    return m > 100
-                }),
-            func(l int, r int) bool {
-                // Only join if the left is even, and the right is odd
-                return l%2 == 0 && r%2 == 1
-            },
-            func(l int, r int) int {
-                // Join by multiplying the numbers
-                return l * r
-            },
-        ).
-        TopicProducer(out).
-        Stream()
-    _ = s.Start()
+	// Create new topics with permanent retention
+	left := essentials.NewTopic[int]()
+	right := essentials.NewTopic[int]()
+	out := essentials.NewTopic[int]()
 
-    go func() {
-        // Start sending stuff to the topic
-        lp := left.NewProducer()
-        rp := right.NewProducer()
-        for i := 0; i < 10000; i++ {
-            lp.Send() <- rand.Intn(1000)
-            rp.Send() <- rand.Intn(1000)
-        }
-        lp.Close()
-        rp.Close()
-    }()
+	s := build.
+		TopicConsumer(left).
+		Filter(func(i int) bool {
+			// Filter out numbers greater than or equal to 200
+			return i < 200
+		}).
+		Join(
+			build.
+				TopicConsumer(right).
+				Filter(func(i int) bool {
+					// Filter out numbers less than or equal to 100
+					return i > 100
+				}),
+			func(l int, r int) bool {
+				// Only join if the left is even, and the right is odd
+				return l%2 == 0 && r%2 == 1
+			},
+			func(l int, r int) int {
+				// Join by multiplying the numbers
+				return l * r
+			},
+		).
+		TopicProducer(out).
+		Stream()
+	_ = s.Start()
 
-    c := out.NewConsumer()
-    for i := 0; i < 10; i++ {
-        // Display the first ten that come out
-        fmt.Println(<-c.Receive())
-    }
-    c.Close()
+	done := make(chan struct{})
+
+	go func() {
+		// Start sending stuff to the topic
+		lp := left.NewProducer()
+		rp := right.NewProducer()
+		for i := 0; i < 10000; i++ {
+			lp.Send() <- rand.Intn(1000)
+			rp.Send() <- rand.Intn(1000)
+		}
+		lp.Close()
+		rp.Close()
+	}()
+
+	go func() {
+		c := out.NewConsumer()
+		for i := 0; i < 10; i++ {
+			// Display the first ten that come out
+			fmt.Println(<-c.Receive())
+		}
+		c.Close()
+		close(done)
+	}()
+
+	<-done
+	_ = s.Stop()
 }
 ```

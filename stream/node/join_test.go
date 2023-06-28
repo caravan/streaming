@@ -7,10 +7,12 @@ import (
 
 	"github.com/caravan/essentials"
 	"github.com/caravan/essentials/message"
-	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/context"
+	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
+
+	internal "github.com/caravan/streaming/internal/stream"
 )
 
 func joinGreaterThan(l int, r int) bool {
@@ -21,8 +23,8 @@ func joinSum(l int, r int) int {
 	return l + r
 }
 
-func makeJoinError(e error) stream.Processor[int, int] {
-	return func(c *context.Context[int, int]) {
+func makeJoinError(e error) stream.Processor[stream.Source, int] {
+	return func(c *context.Context[stream.Source, int]) {
 		<-c.In
 		c.Errors <- e
 	}
@@ -34,14 +36,14 @@ func TestJoin(t *testing.T) {
 	leftTopic := essentials.NewTopic[int]()
 	rightTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
-	typed := streaming.Of[int]()
-	s := typed.NewStream(
-		typed.Join(
-			typed.TopicConsumer(leftTopic),
-			typed.TopicConsumer(rightTopic),
+
+	s := internal.Make(
+		node.Join(
+			node.TopicConsumer(leftTopic),
+			node.TopicConsumer(rightTopic),
 			joinGreaterThan, joinSum,
 		),
-		typed.TopicProducer(outTopic),
+		node.TopicProducer(outTopic),
 	)
 
 	as.Nil(s.Start())
@@ -75,14 +77,14 @@ func TestJoinErrored(t *testing.T) {
 
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
-	typed := streaming.Of[int]()
-	s := typed.NewStream(
-		typed.Join(
-			typed.TopicConsumer(inTopic),
+
+	s := internal.Make(
+		node.Join(
+			node.TopicConsumer(inTopic),
 			makeJoinError(errors.New("error")),
 			joinGreaterThan, joinSum,
 		),
-		typed.TopicProducer(outTopic),
+		node.TopicProducer(outTopic),
 	)
 
 	as.Nil(s.Start())
