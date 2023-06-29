@@ -4,22 +4,26 @@ import (
 	"testing"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
+
+	internal "github.com/caravan/streaming/internal/stream"
 )
 
 func TestFilter(t *testing.T) {
 	as := assert.New(t)
 
-	typed := streaming.Of[int]()
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
-	s := typed.NewStream(
-		typed.TopicConsumer(inTopic),
-		typed.Filter(func(m int) bool {
-			return m%2 == 0
-		}),
-		typed.TopicProducer(outTopic),
+
+	s := internal.Make(
+		node.TopicConsumer(inTopic),
+		node.Subprocess(
+			node.Filter(func(m int) bool {
+				return m%2 == 0
+			}),
+			node.TopicProducer(outTopic),
+		),
 	)
 	as.Nil(s.Start())
 

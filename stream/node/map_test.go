@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
+
+	internal "github.com/caravan/streaming/internal/stream"
 )
 
 func TestMap(t *testing.T) {
@@ -13,13 +15,15 @@ func TestMap(t *testing.T) {
 
 	inTopic := essentials.NewTopic[string]()
 	outTopic := essentials.NewTopic[string]()
-	typed := streaming.Of[string]()
-	s := typed.NewStream(
-		typed.TopicConsumer(inTopic),
-		typed.Map(func(s string) string {
-			return "Hello, " + s + "!"
-		}),
-		typed.TopicProducer(outTopic),
+
+	s := internal.Make(
+		node.TopicConsumer(inTopic),
+		node.Subprocess(
+			node.Map(func(s string) string {
+				return "Hello, " + s + "!"
+			}),
+			node.TopicProducer(outTopic),
+		),
 	)
 
 	as.Nil(s.Start())

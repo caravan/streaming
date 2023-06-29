@@ -18,7 +18,8 @@ import (
 	"math/rand"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/streaming/stream/build"
+	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/stream/node"
 )
 
 func main() {
@@ -27,19 +28,22 @@ func main() {
 	right := essentials.NewTopic[int]()
 	out := essentials.NewTopic[int]()
 
-	s := build.
-		TopicConsumer(left).
-		Filter(func(i int) bool {
-			// Filter out numbers greater than or equal to 200
-			return i < 200
-		}).
-		Join(
-			build.
-				TopicConsumer(right).
-				Filter(func(i int) bool {
+	s := streaming.NewStream(
+		node.Join(
+			node.Bind(
+				node.TopicConsumer(left),
+				node.Filter(func(i int) bool {
+					// Filter out numbers greater than or equal to 200
+					return i < 200
+				}),
+			),
+			node.Bind(
+				node.TopicConsumer(right),
+				node.Filter(func(i int) bool {
 					// Filter out numbers less than or equal to 100
 					return i > 100
 				}),
+			),
 			func(l int, r int) bool {
 				// Only join if the left is even, and the right is odd
 				return l%2 == 0 && r%2 == 1
@@ -48,9 +52,10 @@ func main() {
 				// Join by multiplying the numbers
 				return l * r
 			},
-		).
-		TopicProducer(out).
-		Stream()
+		),
+		node.TopicProducer(out),
+	)
+
 	_ = s.Start()
 
 	done := make(chan struct{})

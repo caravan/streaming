@@ -5,7 +5,7 @@ import (
 	"github.com/caravan/streaming/stream/context"
 )
 
-type Generator[Msg any] func() Msg
+type Generator[Msg any] func() (Msg, bool)
 
 func Generate[Msg any](
 	gen Generator[Msg],
@@ -14,9 +14,20 @@ func Generate[Msg any](
 		for {
 			if _, ok := c.FetchMessage(); !ok {
 				return
-			} else if !c.ForwardResult(gen()) {
+			} else if res, ok := gen(); !ok {
+				return
+			} else if !c.ForwardResult(res) {
 				return
 			}
 		}
 	}
+}
+
+func GenerateFrom[Msg any](
+	ch <-chan Msg,
+) stream.Processor[stream.Source, Msg] {
+	return Generate(func() (Msg, bool) {
+		msg, ok := <-ch
+		return msg, ok
+	})
 }

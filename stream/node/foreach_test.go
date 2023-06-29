@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/streaming"
+	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
+
+	internal "github.com/caravan/streaming/internal/stream"
 )
 
 func TestForEach(t *testing.T) {
@@ -14,10 +16,10 @@ func TestForEach(t *testing.T) {
 
 	sum := 0
 	inTopic := essentials.NewTopic[int]()
-	typed := streaming.Of[int]()
-	s := typed.NewStream(
-		typed.TopicConsumer(inTopic),
-		typed.ForEach(func(m int) {
+
+	s := internal.Make(
+		node.TopicConsumer(inTopic),
+		node.ForEach(func(m int) {
 			sum += m
 		}),
 	)

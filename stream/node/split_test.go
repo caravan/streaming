@@ -10,28 +10,28 @@ import (
 	internal "github.com/caravan/streaming/internal/stream"
 )
 
-func TestMerge(t *testing.T) {
+func TestSplit(t *testing.T) {
 	as := assert.New(t)
 
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
 
 	s := internal.Make(
-		node.Merge(
+		node.TopicConsumer(inTopic),
+		node.Split(
 			node.Bind(
-				node.TopicConsumer(inTopic),
 				node.Map(func(i int) int {
 					return i + 1
 				}),
+				node.TopicProducer(outTopic),
 			),
 			node.Bind(
-				node.TopicConsumer(inTopic),
 				node.Map(func(i int) int {
 					return i * 2
 				}),
+				node.TopicProducer(outTopic),
 			),
 		),
-		node.TopicProducer(outTopic),
 	)
 
 	as.Nil(s.Start())
@@ -40,17 +40,21 @@ func TestMerge(t *testing.T) {
 	p.Send() <- 10
 	p.Close()
 
-	results := map[int]bool{4: true, 6: true, 11: true, 20: true}
-
 	c := outTopic.NewConsumer()
-
-	for i := 0; i < 4; i++ {
-		v := <-c.Receive()
-		_, ok := results[v]
-		as.True(ok)
-		delete(results, v)
+	in := <-c.Receive()
+	as.True(in == 4 || in == 6)
+	if in == 4 {
+		as.Equal(6, <-c.Receive())
+	} else {
+		as.Equal(4, <-c.Receive())
 	}
-
+	in = <-c.Receive()
+	as.True(in == 11 || in == 20)
+	if in == 11 {
+		as.Equal(20, <-c.Receive())
+	} else {
+		as.Equal(11, <-c.Receive())
+	}
 	c.Close()
 
 	as.Nil(s.Stop())

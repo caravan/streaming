@@ -14,7 +14,7 @@ import (
 
 func makeGeneratingStream(value any) stream.Stream {
 	return internal.Make(
-		node.Generate(func() any { return value }),
+		node.Generate(func() (any, bool) { return value, true }),
 		node.Forward[any],
 	)
 }
@@ -58,8 +58,8 @@ func TestStreamError(t *testing.T) {
 	as.Equal(stream.Stop{}.Error(), stream.ErrStopRequested)
 	var s stream.Stream
 	s = internal.Make[any](
-		node.Generate(func() any {
-			return "hello"
+		node.Generate(func() (any, bool) {
+			return "hello", true
 		}),
 		func(c *context.Context[any, any]) {
 			as.True(s.IsRunning())

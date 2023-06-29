@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/caravan/essentials"
-	"github.com/caravan/streaming"
 	"github.com/caravan/streaming/stream/context"
 	"github.com/caravan/streaming/stream/node"
 	"github.com/stretchr/testify/assert"
@@ -38,8 +37,7 @@ func TestSubprocessError(t *testing.T) {
 func TestEmptySubprocess(t *testing.T) {
 	as := assert.New(t)
 
-	typed := streaming.Of[any]()
-	s := typed.Subprocess()
+	s := node.Subprocess[any]()
 	as.NotNil(s)
 
 	done := make(chan context.Done)
