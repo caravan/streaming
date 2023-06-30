@@ -40,18 +40,26 @@ func TestMerge(t *testing.T) {
 	p.Send() <- 10
 	p.Close()
 
-	results := map[int]bool{4: true, 6: true, 11: true, 20: true}
-
 	c := outTopic.NewConsumer()
-
-	for i := 0; i < 4; i++ {
-		v := <-c.Receive()
-		_, ok := results[v]
-		as.True(ok)
-		delete(results, v)
-	}
-
+	testUnorderedIntResults(t, c.Receive(), 4, 6, 11, 20)
 	c.Close()
 
 	as.Nil(s.Stop())
+}
+
+func testUnorderedIntResults(t *testing.T, c <-chan int, nums ...int) {
+	as := assert.New(t)
+
+	choices := map[int]bool{}
+	for _, n := range nums {
+		choices[n] = true
+	}
+	for i := 0; i < len(nums); i++ {
+		v := <-c
+		_, ok := choices[v]
+		as.True(ok)
+		delete(choices, v)
+	}
+
+	as.Zero(len(choices))
 }

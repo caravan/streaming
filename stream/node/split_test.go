@@ -41,20 +41,8 @@ func TestSplit(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	in := <-c.Receive()
-	as.True(in == 4 || in == 6)
-	if in == 4 {
-		as.Equal(6, <-c.Receive())
-	} else {
-		as.Equal(4, <-c.Receive())
-	}
-	in = <-c.Receive()
-	as.True(in == 11 || in == 20)
-	if in == 11 {
-		as.Equal(20, <-c.Receive())
-	} else {
-		as.Equal(11, <-c.Receive())
-	}
+	testUnorderedIntResults(t, c.Receive(), 4, 6)
+	testUnorderedIntResults(t, c.Receive(), 11, 20)
 	c.Close()
 
 	as.Nil(s.Stop())
