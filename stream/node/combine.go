@@ -21,8 +21,8 @@ func Bind[Msg, Handoff, Res any](
 ) stream.Processor[Msg, Res] {
 	return func(c *context.Context[Msg, Res]) {
 		h := make(chan Handoff)
-		left.Start(context.Make(c.Done, c.Errors, c.In, h))
-		right.Start(context.Make(c.Done, c.Errors, h, c.Out))
+		left.Start(context.WithOut(c, h))
+		right.Start(context.WithIn(c, h))
 		<-c.Done
 	}
 }

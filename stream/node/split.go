@@ -14,14 +14,14 @@ func Split[Msg, Res any](
 	return func(c *context.Context[Msg, stream.Sink]) {
 		sink := make(chan Res)
 		Sink[Res]().Start(
-			context.Make(c.Done, c.Errors, sink, make(chan stream.Sink)),
+			context.With(c, sink, make(chan stream.Sink)),
 		)
 
 		handoff := make([]chan Msg, len(p))
 		for i, proc := range p {
 			ch := make(chan Msg)
 			handoff[i] = ch
-			proc.Start(context.Make(c.Done, c.Errors, ch, sink))
+			proc.Start(context.With(c, ch, sink))
 		}
 
 		forwardInput := func(msg Msg) bool {

@@ -41,8 +41,7 @@ func TestSplit(t *testing.T) {
 	p.Close()
 
 	c := outTopic.NewConsumer()
-	testUnorderedIntResults(t, c.Receive(), 4, 6)
-	testUnorderedIntResults(t, c.Receive(), 11, 20)
+	testUnorderedIntResults(t, c.Receive(), 4, 6, 11, 20)
 	c.Close()
 
 	as.Nil(s.Stop())

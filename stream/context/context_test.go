@@ -74,18 +74,18 @@ func TestContextWith(t *testing.T) {
 	as.Nil(c1.In)
 	as.Nil(c1.Out)
 
-	c2 := c1.WithNewIn(make(chan any))
+	c2 := context.WithIn(c1, make(chan any))
 	as.Nil(c2.Out)
 	as.NotNil(c2.In)
 	as.Nil(c1.In)
 
-	c3 := c2.WithNewOut(make(chan any))
+	c3 := context.WithOut(c2, make(chan any))
 	as.NotNil(c3.Out)
 	as.NotNil(c3.In)
 	as.Nil(c2.Out)
 	as.Equal(c3.In, c2.In)
 
-	c4 := c3.WithNewInOut(make(chan any), make(chan any))
+	c4 := context.With(c3, make(chan any), make(chan any))
 	as.NotNil(c4.Out)
 	as.NotNil(c4.Out)
 	as.NotEqual(c3.Out, c4.Out)

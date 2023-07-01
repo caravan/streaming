@@ -20,6 +20,24 @@ func Make[Msg, Res any](
 	return &Context[Msg, Res]{done, errors, in, out}
 }
 
+func With[OldMsg, OldRes, Msg, Res any](
+	c *Context[OldMsg, OldRes], in chan Msg, out chan Res,
+) *Context[Msg, Res] {
+	return Make(c.Done, c.Errors, in, out)
+}
+
+func WithIn[OldMsg, Res, Msg any](
+	c *Context[OldMsg, Res], in chan Msg,
+) *Context[Msg, Res] {
+	return Make(c.Done, c.Errors, in, c.Out)
+}
+
+func WithOut[Msg, OldRes, Res any](
+	c *Context[Msg, OldRes], out chan Res,
+) *Context[Msg, Res] {
+	return Make(c.Done, c.Errors, c.In, out)
+}
+
 func (c *Context[_, _]) IsDone() bool {
 	select {
 	case <-c.Done:
@@ -27,27 +45,6 @@ func (c *Context[_, _]) IsDone() bool {
 	default:
 		return false
 	}
-}
-
-func (c *Context[Msg, Res]) WithNewInOut(
-	in chan Msg, out chan Res,
-) *Context[Msg, Res] {
-	res := *c
-	res.In = in
-	res.Out = out
-	return &res
-}
-
-func (c *Context[Msg, Res]) WithNewIn(in chan Msg) *Context[Msg, Res] {
-	res := *c
-	res.In = in
-	return &res
-}
-
-func (c *Context[Msg, Res]) WithNewOut(out chan Res) *Context[Msg, Res] {
-	res := *c
-	res.Out = out
-	return &res
 }
 
 func (c *Context[Msg, _]) FetchMessage() (Msg, bool) {

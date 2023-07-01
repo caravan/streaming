@@ -27,8 +27,8 @@ func Join[Left, Right, Res any](
 	return func(c *context.Context[stream.Source, Res]) {
 		leftOut := make(chan Left)
 		rightOut := make(chan Right)
-		left.Start(context.Make(c.Done, c.Errors, c.In, leftOut))
-		right.Start(context.Make(c.Done, c.Errors, c.In, rightOut))
+		left.Start(context.WithOut(c, leftOut))
+		right.Start(context.WithOut(c, rightOut))
 
 		joinResults := func() (Left, Right, bool) {
 			var leftZero Left
