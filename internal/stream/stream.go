@@ -2,6 +2,7 @@ package stream
 
 import (
 	"errors"
+	"log"
 	"sync"
 
 	"github.com/caravan/streaming/stream"
@@ -9,12 +10,19 @@ import (
 	"github.com/caravan/streaming/stream/node"
 )
 
-// Stream is the internal implementation of a stream
-type Stream[In, Out any] struct {
-	sync.Mutex
-	root stream.Processor[stream.Source, Out]
-	done chan context.Done
-}
+type (
+	// Stream is the internal implementation of a stream.Stream
+	Stream[In, Out any] struct {
+		root stream.Processor[stream.Source, Out]
+	}
+
+	// Running is the internal implementation of a stream.Running
+	Running[In, Out any] struct {
+		sync.Mutex
+		*Stream[In, Out]
+		done chan context.Done
+	}
+)
 
 // Make builds a Stream. The Stream must be started using the Start method
 func Make[In, Out any](
@@ -27,67 +35,76 @@ func Make[In, Out any](
 }
 
 // Start kicks off the background routine for this stream
-func (s *Stream[In, Out]) Start() error {
-	s.Lock()
-	if s.isRunning() {
-		s.Unlock()
-		return errors.New(stream.ErrAlreadyStarted)
+func (s *Stream[In, Out]) Start() stream.Running {
+	r := &Running[In, Out]{
+		Stream: s,
+		done:   make(chan context.Done),
 	}
-	s.done = make(chan context.Done)
-	s.Unlock()
+	r.startStream(
+		r.startMonitor(),
+	)
+	return r
+}
 
-	err := make(chan error)
-	go func() {
-		for {
-			select {
-			case <-s.done:
-				return
-			case e := <-err:
-				if _, ok := e.(stream.Stop); ok {
-					s.Lock()
-					close(s.done)
-					s.Unlock()
-				}
-			}
-		}
-	}()
-
+func (r *Running[_, Out]) startStream(monitor chan context.Advice) {
 	go func() {
 		in := make(chan stream.Source)
 		out := make(chan stream.Sink)
 
 		loop := node.Bind(
-			s.root,
+			r.root,
 			node.Sink[Out](),
 		)
 
-		loop.Start(context.Make(s.done, err, in, out))
+		loop.Start(context.Make(r.done, monitor, in, out))
 
 		for {
 			select {
-			case <-s.done:
+			case <-r.done:
 				return
 			case in <- stream.Source{}:
 			}
 		}
 	}()
-	return nil
+}
+
+func (r *Running[_, _]) startMonitor() chan context.Advice {
+	monitor := make(chan context.Advice)
+	go func() {
+		for {
+			select {
+			case <-r.done:
+				return
+			case a := <-monitor:
+				r.handleAdvice(a)
+			}
+		}
+	}()
+	return monitor
+}
+
+func (r *Running[_, _]) handleAdvice(a context.Advice) {
+	switch e := a.(type) {
+	case *context.Error:
+		log.Print(e.Error())
+	case *context.Fatal:
+		log.Print(e.Error())
+		_ = r.Stop()
+	case context.Stop:
+		_ = r.Stop()
+	}
 }
 
 // IsRunning returns whether the stream is actively running
-func (s *Stream[In, Out]) IsRunning() bool {
-	s.Lock()
-	defer s.Unlock()
-	return s.isRunning()
+func (r *Running[_, _]) IsRunning() bool {
+	r.Lock()
+	defer r.Unlock()
+	return r.isRunning()
 }
 
-func (s *Stream[In, Out]) isRunning() bool {
-	if s.done == nil {
-		return false
-	}
-
+func (r *Running[_, _]) isRunning() bool {
 	select {
-	case <-s.done:
+	case <-r.done:
 		return false
 	default:
 		return true
@@ -95,15 +112,17 @@ func (s *Stream[In, Out]) isRunning() bool {
 }
 
 // Stop the stream if it's running
-func (s *Stream[In, Out]) Stop() error {
-	s.Lock()
-	defer s.Unlock()
+func (r *Running[_, _]) Stop() error {
+	r.Lock()
+	defer r.Unlock()
 
-	if !s.isRunning() {
+	if !r.isRunning() {
 		return errors.New(stream.ErrAlreadyStopped)
 	}
-	close(s.done)
-	s.done = nil
-
+	r.stop()
 	return nil
+}
+
+func (r *Running[_, _]) stop() {
+	close(r.done)
 }

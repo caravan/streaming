@@ -1,7 +1,6 @@
 package context_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/caravan/streaming/stream/context"
@@ -12,11 +11,11 @@ func TestOpenContext(t *testing.T) {
 	as := assert.New(t)
 
 	done := make(chan context.Done)
-	err := make(chan error)
+	monitor := make(chan context.Advice)
 	in := make(chan any)
 	out := make(chan any)
 
-	c := context.Make(done, err, in, out)
+	c := context.Make(done, monitor, in, out)
 	as.NotNil(c)
 	as.False(c.IsDone())
 
@@ -32,10 +31,10 @@ func TestOpenContext(t *testing.T) {
 	as.Equal("goodbye", <-out)
 
 	go func() {
-		ok = c.ReportError(errors.New("hello"))
+		ok = c.Errorf("hello")
 		as.True(ok)
 	}()
-	as.EqualError(<-err, "hello")
+	as.EqualError((<-monitor).(error), "hello")
 }
 
 func TestClosedContext(t *testing.T) {
@@ -44,11 +43,10 @@ func TestClosedContext(t *testing.T) {
 	done := make(chan context.Done)
 	close(done)
 
-	err := make(chan error)
 	in := make(chan any)
 	out := make(chan any)
 
-	c := context.Make(done, err, in, out)
+	c := context.Make(done, make(chan context.Advice), in, out)
 	as.NotNil(c)
 	as.True(c.IsDone())
 
@@ -60,7 +58,7 @@ func TestClosedContext(t *testing.T) {
 	ok = c.ForwardResult("goodbye")
 	as.False(ok)
 
-	ok = c.ReportError(errors.New("hello"))
+	ok = c.Errorf("hello")
 	as.False(ok)
 }
 
@@ -68,9 +66,8 @@ func TestContextWith(t *testing.T) {
 	as := assert.New(t)
 
 	done := make(chan context.Done)
-	err := make(chan error)
 
-	c1 := context.Make[any, any](done, err, nil, nil)
+	c1 := context.Make[any, any](done, make(chan context.Advice), nil, nil)
 	as.Nil(c1.In)
 	as.Nil(c1.Out)
 

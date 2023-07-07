@@ -20,7 +20,7 @@ func TestGenerate(t *testing.T) {
 		return 42, true
 	})
 
-	gen.Start(context.Make(done, make(chan error), in, out))
+	gen.Start(context.Make(done, make(chan context.Advice), in, out))
 
 	in <- stream.Source{}
 	as.Equal(42, <-out)
@@ -37,7 +37,7 @@ func TestGenerateFrom(t *testing.T) {
 	genCh := make(chan int)
 
 	gen := node.GenerateFrom(genCh)
-	gen.Start(context.Make(done, make(chan error), in, out))
+	gen.Start(context.Make(done, make(chan context.Advice), in, out))
 
 	in <- stream.Source{}
 	genCh <- 42

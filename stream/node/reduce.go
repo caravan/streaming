@@ -35,7 +35,7 @@ func ReduceFrom[In, Out any](
 func reduce[In, Out any](
 	fn Reducer[Out, In], initial initialReduction[Out],
 ) stream.Processor[In, Out] {
-	return func(c *context.Context[In, Out]) {
+	return func(c *context.Context[In, Out]) error {
 		var fetchFirst func() (Out, bool)
 
 		if initial != nil {
@@ -54,15 +54,15 @@ func reduce[In, Out any](
 		}
 
 		if res, ok := fetchFirst(); !ok {
-			return
+			return nil
 		} else {
 			for {
 				if msg, ok := c.FetchMessage(); !ok {
-					return
+					return nil
 				} else {
 					res = fn(res, msg)
 					if !c.ForwardResult(res) {
-						return
+						return nil
 					}
 				}
 			}

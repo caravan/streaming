@@ -19,20 +19,20 @@ func TableLookup[Msg any, Key comparable, Value any](
 	if err != nil {
 		return nil, err
 	}
-	return func(c *context.Context[Msg, Value]) {
+	return func(c *context.Context[Msg, Value]) error {
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
-				return
+				return nil
 			} else if k, e := k(msg); e != nil {
-				if !c.ReportError(e) {
-					return
+				if !c.Error(e) {
+					return nil
 				}
 			} else if res, e := getColumn(k); e != nil {
-				if !c.ReportError(e) {
-					return
+				if !c.Error(e) {
+					return nil
 				}
 			} else if !c.ForwardResult(res[0]) {
-				return
+				return nil
 			}
 		}
 	}, nil
@@ -43,16 +43,16 @@ func TableLookup[Msg any, Key comparable, Value any](
 func TableUpdater[Msg any, Key comparable, Value any](
 	t table.Updater[Msg, Key, Value],
 ) stream.Processor[Msg, Msg] {
-	return func(c *context.Context[Msg, Msg]) {
+	return func(c *context.Context[Msg, Msg]) error {
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
-				return
+				return nil
 			} else if e := t.Update(msg); e != nil {
-				if !c.ReportError(e) {
-					return
+				if !c.Error(e) {
+					return nil
 				}
 			} else if !c.ForwardResult(msg) {
-				return
+				return nil
 			}
 		}
 	}

@@ -22,9 +22,9 @@ func TestForEach(t *testing.T) {
 		node.ForEach(func(m int) {
 			sum += m
 		}),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	p.Send() <- 1
 	p.Send() <- 2

@@ -24,9 +24,11 @@ func joinSum(l int, r int) int {
 }
 
 func makeJoinError(e error) stream.Processor[stream.Source, int] {
-	return func(c *context.Context[stream.Source, int]) {
+	return func(c *context.Context[stream.Source, int]) error {
 		<-c.In
-		c.Errors <- e
+		c.Error(e)
+		<-c.Done
+		return nil
 	}
 }
 
@@ -44,9 +46,9 @@ func TestJoin(t *testing.T) {
 			joinGreaterThan, joinSum,
 		),
 		node.TopicProducer(outTopic),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	lp := leftTopic.NewProducer()
 	rp := rightTopic.NewProducer()
 	lp.Send() <- 3 // no match
@@ -85,9 +87,9 @@ func TestJoinErrored(t *testing.T) {
 			joinGreaterThan, joinSum,
 		),
 		node.TopicProducer(outTopic),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	p.Send() <- 32
 	p.Close()

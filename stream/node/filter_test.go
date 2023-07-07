@@ -24,9 +24,9 @@ func TestFilter(t *testing.T) {
 			}),
 			node.TopicProducer(outTopic),
 		),
-	)
-	as.Nil(s.Start())
+	).Start()
 
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	for i := 0; i < 10; i++ {
 		p.Send() <- i

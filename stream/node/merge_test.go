@@ -32,9 +32,9 @@ func TestMerge(t *testing.T) {
 			),
 		),
 		node.TopicProducer(outTopic),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	p.Send() <- 3
 	p.Send() <- 10

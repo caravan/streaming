@@ -24,9 +24,9 @@ func TestMap(t *testing.T) {
 			}),
 			node.TopicProducer(outTopic),
 		),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	p.Send() <- "Caravan"
 	p.Close()

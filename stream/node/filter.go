@@ -12,14 +12,14 @@ type Predicate[Msg any] func(Msg) bool
 // Filter constructs a Processor that will only forward its messages if the
 // provided function returns true
 func Filter[Msg any](fn Predicate[Msg]) stream.Processor[Msg, Msg] {
-	return func(c *context.Context[Msg, Msg]) {
+	return func(c *context.Context[Msg, Msg]) error {
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
-				return
+				return nil
 			} else if !fn(msg) {
 				continue
 			} else if !c.ForwardResult(msg) {
-				return
+				return nil
 			}
 		}
 	}

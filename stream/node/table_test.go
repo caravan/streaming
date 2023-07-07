@@ -60,7 +60,7 @@ func TestTableUpdater(t *testing.T) {
 	in := make(chan *row)
 	out := make(chan string)
 
-	tester.Start(context.Make(done, make(chan error), in, out))
+	tester.Start(context.Make(done, make(chan context.Advice), in, out))
 	in <- &row{
 		id:    "some id",
 		name:  "some name",
@@ -94,7 +94,7 @@ func TestTableLookup(t *testing.T) {
 	in := make(chan string)
 	out := make(chan string)
 
-	lookup.Start(context.Make(done, make(chan error), in, out))
+	lookup.Start(context.Make(done, make(chan context.Advice), in, out))
 	in <- "some id"
 	as.Equal("some value", <-out)
 	close(done)
@@ -133,14 +133,16 @@ func TestLookupProcessError(t *testing.T) {
 
 	done := make(chan context.Done)
 	in := make(chan any)
-	err := make(chan error)
+	monitor := make(chan context.Advice)
 
-	lookup.Start(context.Make(done, err, in, make(chan any)))
+	lookup.Start(context.Make(done, monitor, in, make(chan any)))
 
 	in <- errors.New("key error")
-	as.EqualError(<-err, "key error")
+	as.EqualError((<-monitor).(error), "key error")
 
 	in <- "missing"
-	as.EqualError(<-err, fmt.Sprintf(table.ErrKeyNotFound, theKey))
+	as.EqualError(
+		(<-monitor).(error), fmt.Sprintf(table.ErrKeyNotFound, theKey),
+	)
 	close(done)
 }

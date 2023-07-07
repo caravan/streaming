@@ -24,53 +24,46 @@ func TestStreamCreate(t *testing.T) {
 
 	s := makeGeneratingStream("hello")
 	as.NotNil(s)
-	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
 }
 
 func TestStreamStart(t *testing.T) {
 	as := assert.New(t)
 
-	s := makeGeneratingStream("hello")
-	as.Nil(s.Start())
-	as.EqualError(s.Start(), stream.ErrAlreadyStarted)
+	s := makeGeneratingStream("hello").Start()
+	as.NotNil(s)
+	as.Nil(s.Stop())
 }
 
 func TestStreamStop(t *testing.T) {
 	as := assert.New(t)
 
-	s := makeGeneratingStream("hello")
-	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
-}
-
-func TestStreamStartStop(t *testing.T) {
-	as := assert.New(t)
-
-	s := makeGeneratingStream("hello")
-	as.Nil(s.Start())
-	as.EqualError(s.Start(), stream.ErrAlreadyStarted)
+	s := makeGeneratingStream("hello").Start()
+	as.NotNil(s)
 
 	as.Nil(s.Stop())
 	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
 }
 
-func TestStreamError(t *testing.T) {
+func TestStreamMonitorStop(t *testing.T) {
 	as := assert.New(t)
-	as.Equal(stream.Stop{}.Error(), stream.ErrStopRequested)
-	var s stream.Stream
-	s = internal.Make[any](
+	var r stream.Running
+	s := internal.Make[any](
 		node.Generate(func() (any, bool) {
 			return "hello", true
 		}),
-		func(c *context.Context[any, any]) {
-			as.True(s.IsRunning())
-			c.ReportError(stream.Stop{})
+		func(c *context.Context[any, any]) error {
+			as.True(r.IsRunning())
+			c.Advise(context.Stop{})
+
+			return nil
 		},
 	)
-	as.Nil(s.Start())
+	r = s.Start()
+	as.NotNil(r)
 	done := make(chan bool)
 	go func() {
 		time.Sleep(500 * time.Millisecond)
-		as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
+		as.EqualError(r.Stop(), stream.ErrAlreadyStopped)
 		done <- true
 	}()
 	<-done

@@ -24,7 +24,7 @@ func Join[Left, Right, Out any](
 	predicate BinaryPredicate[Left, Right],
 	joiner BinaryOperator[Left, Right, Out],
 ) stream.Processor[stream.Source, Out] {
-	return func(c *context.Context[stream.Source, Out]) {
+	return func(c *context.Context[stream.Source, Out]) error {
 		leftOut := make(chan Left)
 		rightOut := make(chan Right)
 		left.Start(context.WithOut(c, leftOut))
@@ -55,11 +55,11 @@ func Join[Left, Right, Out any](
 
 		for {
 			if left, right, ok := joinResults(); !ok {
-				return
+				return nil
 			} else if !predicate(left, right) {
 				continue
 			} else if !c.ForwardResult(joiner(left, right)) {
-				return
+				return nil
 			}
 		}
 	}

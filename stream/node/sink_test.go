@@ -19,7 +19,7 @@ func TestSinkInto(t *testing.T) {
 	sinkCh := make(chan int)
 
 	sink := node.SinkInto(sinkCh)
-	sink.Start(context.Make(done, make(chan error), in, out))
+	sink.Start(context.Make(done, make(chan context.Advice), in, out))
 
 	go func() {
 		in <- 42

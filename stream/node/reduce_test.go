@@ -24,9 +24,9 @@ func TestReduce(t *testing.T) {
 			}),
 			node.TopicProducer(outTopic),
 		),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	p.Send() <- 1
 	p.Send() <- 2
@@ -55,9 +55,9 @@ func TestReduceFrom(t *testing.T) {
 			}, 5),
 			node.TopicProducer(outTopic),
 		),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	p.Send() <- 1
 	p.Send() <- 2

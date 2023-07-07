@@ -6,10 +6,10 @@ import (
 )
 
 func Sink[Msg any]() stream.Processor[Msg, stream.Sink] {
-	return func(c *context.Context[Msg, stream.Sink]) {
+	return func(c *context.Context[Msg, stream.Sink]) error {
 		for {
 			if _, ok := c.FetchMessage(); !ok {
-				return
+				return nil
 			}
 		}
 	}

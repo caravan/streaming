@@ -17,7 +17,7 @@ func TestForward(t *testing.T) {
 	out := make(chan int)
 
 	var p stream.Processor[int, int] = node.Forward[int]
-	p.Start(context.Make(done, make(chan error), in, out))
+	p.Start(context.Make(done, make(chan context.Advice), in, out))
 
 	in <- 42
 	as.Equal(42, <-out)

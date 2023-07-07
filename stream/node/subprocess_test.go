@@ -1,7 +1,6 @@
 package node_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -18,19 +17,21 @@ func TestSubprocessError(t *testing.T) {
 
 	s := node.Subprocess[any](
 		node.Forward[any],
-		func(c *context.Context[any, any]) {
+		func(c *context.Context[any, any]) error {
 			<-c.In
-			c.Errors <- errors.New("explosion")
+			c.Errorf("explosion")
+			<-c.Done
+			return nil
 		},
 	)
 
 	done := make(chan context.Done)
-	err := make(chan error)
+	monitor := make(chan context.Advice)
 	in := make(chan any)
 
-	s.Start(context.Make(done, err, in, make(chan any)))
+	s.Start(context.Make(done, monitor, in, make(chan any)))
 	in <- "anything"
-	as.EqualError(<-err, "explosion")
+	as.EqualError((<-monitor).(error), "explosion")
 	close(done)
 }
 
@@ -44,7 +45,7 @@ func TestEmptySubprocess(t *testing.T) {
 	in := make(chan any)
 	out := make(chan any)
 
-	s.Start(context.Make(done, make(chan error), in, out))
+	s.Start(context.Make(done, make(chan context.Advice), in, out))
 	in <- "hello"
 	as.Equal("hello", <-out)
 	close(done)
@@ -59,9 +60,9 @@ func TestSubprocess(t *testing.T) {
 	s := internal.Make(
 		node.TopicConsumer(inTopic),
 		node.TopicProducer(outTopic),
-	)
+	).Start()
 
-	as.Nil(s.Start())
+	as.NotNil(s)
 	p := inTopic.NewProducer()
 	p.Send() <- "hello"
 	p.Close()

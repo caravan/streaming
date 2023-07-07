@@ -10,14 +10,14 @@ type Generator[Msg any] func() (Msg, bool)
 func Generate[Msg any](
 	gen Generator[Msg],
 ) stream.Processor[stream.Source, Msg] {
-	return func(c *context.Context[stream.Source, Msg]) {
+	return func(c *context.Context[stream.Source, Msg]) error {
 		for {
 			if _, ok := c.FetchMessage(); !ok {
-				return
+				return nil
 			} else if res, ok := gen(); !ok {
-				return
+				return nil
 			} else if !c.ForwardResult(res) {
-				return
+				return nil
 			}
 		}
 	}
