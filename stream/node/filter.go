@@ -9,7 +9,7 @@ import (
 // filtering. Returning false will drop the message from the Stream
 type Predicate[Msg any] func(Msg) bool
 
-// Filter constructs a processor that will only forward to a Result if the
+// Filter constructs a Processor that will only forward its messages if the
 // provided function returns true
 func Filter[Msg any](fn Predicate[Msg]) stream.Processor[Msg, Msg] {
 	return func(c *context.Context[Msg, Msg]) {

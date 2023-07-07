@@ -11,8 +11,8 @@ type Mapper[From, To any] func(From) To
 
 // Map constructs a processor that maps the messages it sees into new messages
 // using the provided function
-func Map[Msg, Res any](fn Mapper[Msg, Res]) stream.Processor[Msg, Res] {
-	return func(c *context.Context[Msg, Res]) {
+func Map[From, To any](fn Mapper[From, To]) stream.Processor[From, To] {
+	return func(c *context.Context[From, To]) {
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
 				return

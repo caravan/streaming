@@ -8,29 +8,29 @@ import (
 	"github.com/caravan/streaming/stream/context"
 )
 
-func Split[Msg, Res any](
-	p ...stream.Processor[Msg, Res],
-) stream.Processor[Msg, stream.Sink] {
-	return func(c *context.Context[Msg, stream.Sink]) {
-		sink := make(chan Res)
-		Sink[Res]().Start(
+func Split[In, Out any](
+	p ...stream.Processor[In, Out],
+) stream.Processor[In, stream.Sink] {
+	return func(c *context.Context[In, stream.Sink]) {
+		sink := make(chan Out)
+		Sink[Out]().Start(
 			context.With(c, sink, make(chan stream.Sink)),
 		)
 
-		handoff := make([]chan Msg, len(p))
+		handoff := make([]chan In, len(p))
 		for i, proc := range p {
-			ch := make(chan Msg)
+			ch := make(chan In)
 			handoff[i] = ch
 			proc.Start(context.With(c, ch, sink))
 		}
 
-		forwardInput := func(msg Msg) bool {
+		forwardInput := func(msg In) bool {
 			var isDone atomic.Bool
 			var group sync.WaitGroup
 			group.Add(len(p))
 
 			for _, ch := range handoff {
-				go func(ch chan Msg) {
+				go func(ch chan In) {
 					defer group.Done()
 					select {
 					case <-c.Done:

@@ -15,36 +15,36 @@ type (
 
 // Reduce constructs a processor that reduces the messages it sees into some form
 // of aggregated messages, based on the provided function
-func Reduce[Msg, Res any](
-	fn Reducer[Res, Msg],
-) stream.Processor[Msg, Res] {
+func Reduce[In, Out any](
+	fn Reducer[Out, In],
+) stream.Processor[In, Out] {
 	return reduce(fn, nil)
 }
 
 // ReduceFrom constructs a processor that reduces the messages it sees into some
 // form of aggregated messages, based on the provided function and an initial
 // message
-func ReduceFrom[Msg, Res any](
-	fn Reducer[Res, Msg], init Res,
-) stream.Processor[Msg, Res] {
-	return reduce(fn, func() Res {
+func ReduceFrom[In, Out any](
+	fn Reducer[Out, In], init Out,
+) stream.Processor[In, Out] {
+	return reduce(fn, func() Out {
 		return init
 	})
 }
 
-func reduce[Msg, Res any](
-	fn Reducer[Res, Msg], initial initialReduction[Res],
-) stream.Processor[Msg, Res] {
-	return func(c *context.Context[Msg, Res]) {
-		var fetchFirst func() (Res, bool)
+func reduce[In, Out any](
+	fn Reducer[Out, In], initial initialReduction[Out],
+) stream.Processor[In, Out] {
+	return func(c *context.Context[In, Out]) {
+		var fetchFirst func() (Out, bool)
 
 		if initial != nil {
-			fetchFirst = func() (Res, bool) {
+			fetchFirst = func() (Out, bool) {
 				return initial(), true
 			}
 		} else {
-			fetchFirst = func() (Res, bool) {
-				var zero Res
+			fetchFirst = func() (Out, bool) {
+				var zero Out
 				if msg, ok := c.FetchMessage(); !ok {
 					return zero, false
 				} else {

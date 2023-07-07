@@ -4,41 +4,41 @@ import (
 	"fmt"
 	"sync"
 
-	_table "github.com/caravan/streaming/table"
+	"github.com/caravan/streaming/table"
 )
 
-// the internal implementation of a Table
-type table[Key comparable, Value any] struct {
+// Table is the internal implementation of a table.Table
+type Table[Key comparable, Value any] struct {
 	sync.RWMutex
-	names   []_table.ColumnName
-	indexes map[_table.ColumnName]int
+	names   []table.ColumnName
+	indexes map[table.ColumnName]int
 	rows    map[Key][]Value
 }
 
 func Make[Key comparable, Value any](
-	c ..._table.ColumnName,
-) (_table.Table[Key, Value], error) {
+	c ...table.ColumnName,
+) (table.Table[Key, Value], error) {
 	if err := checkColumnDuplicates(c); err != nil {
 		return nil, err
 	}
-	indexes := map[_table.ColumnName]int{}
+	indexes := map[table.ColumnName]int{}
 	for i, n := range c {
 		indexes[n] = i
 	}
-	return &table[Key, Value]{
+	return &Table[Key, Value]{
 		names:   c,
 		indexes: indexes,
 		rows:    map[Key][]Value{},
 	}, nil
 }
 
-func (t *table[_, _]) Columns() []_table.ColumnName {
+func (t *Table[_, _]) Columns() []table.ColumnName {
 	return t.names[:]
 }
 
-func (t *table[Key, Value]) Getter(
-	c ..._table.ColumnName,
-) (_table.Getter[Key, Value], error) {
+func (t *Table[Key, Value]) Getter(
+	c ...table.ColumnName,
+) (table.Getter[Key, Value], error) {
 	indexes, err := t.columnIndexes(c)
 	if err != nil {
 		return nil, err
@@ -54,13 +54,13 @@ func (t *table[Key, Value]) Getter(
 			}
 			return res, nil
 		}
-		return nil, fmt.Errorf(_table.ErrKeyNotFound, k)
+		return nil, fmt.Errorf(table.ErrKeyNotFound, k)
 	}, nil
 }
 
-func (t *table[Key, Value]) Setter(
-	c ..._table.ColumnName,
-) (_table.Setter[Key, Value], error) {
+func (t *Table[Key, Value]) Setter(
+	c ...table.ColumnName,
+) (table.Setter[Key, Value], error) {
 	indexes, err := t.columnIndexes(c)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (t *table[Key, Value]) Setter(
 
 		if len(v) != len(indexes) {
 			return fmt.Errorf(
-				_table.ErrValueCountRequired, len(indexes), len(v),
+				table.ErrValueCountRequired, len(indexes), len(v),
 			)
 		}
 		e, ok := t.rows[k]
@@ -90,23 +90,23 @@ func (t *table[Key, Value]) Setter(
 	}, nil
 }
 
-func (t *table[_, _]) columnIndexes(c []_table.ColumnName) ([]int, error) {
+func (t *Table[_, _]) columnIndexes(c []table.ColumnName) ([]int, error) {
 	sel := make([]int, len(c))
 	for i, name := range c {
 		s, ok := t.indexes[name]
 		if !ok {
-			return nil, fmt.Errorf(_table.ErrColumnNotFound, name)
+			return nil, fmt.Errorf(table.ErrColumnNotFound, name)
 		}
 		sel[i] = s
 	}
 	return sel, nil
 }
 
-func checkColumnDuplicates(c []_table.ColumnName) error {
-	names := map[_table.ColumnName]bool{}
+func checkColumnDuplicates(c []table.ColumnName) error {
+	names := map[table.ColumnName]bool{}
 	for _, n := range c {
 		if _, ok := names[n]; ok {
-			return fmt.Errorf(_table.ErrDuplicateColumnName, n)
+			return fmt.Errorf(table.ErrDuplicateColumnName, n)
 		}
 		names[n] = true
 	}

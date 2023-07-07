@@ -1,44 +1,44 @@
 package context
 
 type (
-	Context[Msg, Res any] struct {
+	Context[In, Out any] struct {
 		Done   <-chan Done
 		Errors chan<- error
-		In     <-chan Msg
-		Out    chan<- Res
+		In     <-chan In
+		Out    chan<- Out
 	}
 
 	Done struct{}
 )
 
-func Make[Msg, Res any](
+func Make[In, Out any](
 	done <-chan Done,
 	errors chan<- error,
-	in <-chan Msg,
-	out chan<- Res,
-) *Context[Msg, Res] {
-	return &Context[Msg, Res]{done, errors, in, out}
+	in <-chan In,
+	out chan<- Out,
+) *Context[In, Out] {
+	return &Context[In, Out]{done, errors, in, out}
 }
 
-func With[OldMsg, OldRes, Msg, Res any](
-	c *Context[OldMsg, OldRes], in chan Msg, out chan Res,
-) *Context[Msg, Res] {
+func With[OldIn, OldOut, In, Out any](
+	c *Context[OldIn, OldOut], in chan In, out chan Out,
+) *Context[In, Out] {
 	return Make(c.Done, c.Errors, in, out)
 }
 
-func WithIn[OldMsg, Res, Msg any](
-	c *Context[OldMsg, Res], in chan Msg,
-) *Context[Msg, Res] {
+func WithIn[OldIn, Out, In any](
+	c *Context[OldIn, Out], in chan In,
+) *Context[In, Out] {
 	return Make(c.Done, c.Errors, in, c.Out)
 }
 
-func WithOut[Msg, OldRes, Res any](
-	c *Context[Msg, OldRes], out chan Res,
-) *Context[Msg, Res] {
+func WithOut[In, OldOut, Out any](
+	c *Context[In, OldOut], out chan Out,
+) *Context[In, Out] {
 	return Make(c.Done, c.Errors, c.In, out)
 }
 
-func (c *Context[_, _]) IsDone() bool {
+func (c *Context[In, Out]) IsDone() bool {
 	select {
 	case <-c.Done:
 		return true
@@ -47,17 +47,17 @@ func (c *Context[_, _]) IsDone() bool {
 	}
 }
 
-func (c *Context[Msg, _]) FetchMessage() (Msg, bool) {
+func (c *Context[In, Out]) FetchMessage() (In, bool) {
 	select {
 	case <-c.Done:
-		var zero Msg
+		var zero In
 		return zero, false
 	case msg := <-c.In:
 		return msg, true
 	}
 }
 
-func (c *Context[_, Res]) ForwardResult(res Res) bool {
+func (c *Context[In, Out]) ForwardResult(res Out) bool {
 	select {
 	case <-c.Done:
 		return false
@@ -66,7 +66,7 @@ func (c *Context[_, Res]) ForwardResult(res Res) bool {
 	}
 }
 
-func (c *Context[_, _]) ReportError(e error) bool {
+func (c *Context[In, Out]) ReportError(e error) bool {
 	select {
 	case <-c.Done:
 		return false

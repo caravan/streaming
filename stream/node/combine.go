@@ -5,22 +5,22 @@ import (
 	"github.com/caravan/streaming/stream/context"
 )
 
-// Bind the result of the left Processor to the input of the right Processor,
+// Bind the output of the left Processor to the input of the right Processor,
 // returning a new Processor that performs the handoff. If an error is reported
 // by the left Processor, the handoff will be short-circuited and the error
 // will be reported downstream.
 //
-// Processor[Msg, Res] = Processor[Msg, Handoff] -> Processor[Handoff, Res]
+// Processor[In, Out] = Processor[In, Bound] -> Processor[Bound, Out]
 //
-// Msg is the input type of the left Processor, Handoff is the type of the left
-// Processor's result, as well as the input type of the right Processor. Res is
-// the type of the right Processor's result
-func Bind[Msg, Handoff, Res any](
-	left stream.Processor[Msg, Handoff],
-	right stream.Processor[Handoff, Res],
-) stream.Processor[Msg, Res] {
-	return func(c *context.Context[Msg, Res]) {
-		h := make(chan Handoff)
+// In is the input type of the left Processor, Bound is the type of the left
+// Processor's output as well as the input type of the right Processor. Out is
+// the type of the right Processor's output
+func Bind[In, Bound, Out any](
+	left stream.Processor[In, Bound],
+	right stream.Processor[Bound, Out],
+) stream.Processor[In, Out] {
+	return func(c *context.Context[In, Out]) {
+		h := make(chan Bound)
 		left.Start(context.WithOut(c, h))
 		right.Start(context.WithIn(c, h))
 		<-c.Done

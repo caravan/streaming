@@ -12,8 +12,8 @@ func Subprocess[Msg any](
 	case 1:
 		return p[0]
 	case 2:
-		return Bind[Msg, Msg](p[0], p[1])
+		return Bind(p[0], p[1])
 	default:
-		return Bind[Msg, Msg](p[0], Subprocess(p[1:]...))
+		return Bind(p[0], Subprocess(p[1:]...))
 	}
 }

@@ -23,10 +23,15 @@ type (
 	}
 
 	// Processor is a function that processes part of a Stream topology
-	Processor[Msg, Res any] func(*context.Context[Msg, Res])
+	Processor[In, Out any] func(*context.Context[In, Out])
 
+	// Source messages are provided to a Processor that is meant to generate
+	// messages from a source outside its current Stream. Examples would be
+	// node.TopicConsumer and node.Generate
 	Source struct{}
 
+	// Sink messages are produced by a Processor that is meant to terminate a
+	// Stream. Examples would be node.SinkTo and node.Sink
 	Sink struct{}
 
 	// Stop is a special Error that instructs the stream to completely
@@ -46,7 +51,7 @@ func (Stop) Error() string {
 }
 
 // Start begins the Processor in a new go routine, logging any abnormalities
-func (p Processor[Msg, Res]) Start(c *context.Context[Msg, Res]) {
+func (p Processor[In, Out]) Start(c *context.Context[In, Out]) {
 	go func() {
 		p(c)
 		if !c.IsDone() {
