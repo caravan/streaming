@@ -6,10 +6,10 @@ import (
 	"github.com/caravan/streaming/table"
 )
 
-// TableLookup performs a lookup on a table using the provided message. The
-// Key extracts a Key from this message and uses it to perform the
-// lookup against the Table. The ColumnSelector returned by the lookup is forwarded to
-// the next Processor
+// TableLookup performs a lookup on a table using the provided message. The Key
+// extracts a Key from this message and uses it to perform the lookup against
+// the Table. The ColumnSelector returned by the lookup is forwarded to the
+// next Processor
 func TableLookup[Msg any, Key comparable, Value any](
 	t table.Table[Key, Value],
 	c table.ColumnName,

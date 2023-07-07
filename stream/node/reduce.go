@@ -13,17 +13,17 @@ type (
 	initialReduction[Res any] func() Res
 )
 
-// Reduce constructs a processor that reduces the messages it sees into some form
-// of aggregated messages, based on the provided function
+// Reduce constructs a processor that reduces the messages it sees into some
+// form of aggregated messages, based on the provided function
 func Reduce[In, Out any](
 	fn Reducer[Out, In],
 ) stream.Processor[In, Out] {
 	return reduce(fn, nil)
 }
 
-// ReduceFrom constructs a processor that reduces the messages it sees into some
-// form of aggregated messages, based on the provided function and an initial
-// message
+// ReduceFrom constructs a processor that reduces the messages it sees into
+// some form of aggregated messages, based on the provided function and an
+// initial message
 func ReduceFrom[In, Out any](
 	fn Reducer[Out, In], init Out,
 ) stream.Processor[In, Out] {

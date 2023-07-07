@@ -7,14 +7,14 @@ import (
 )
 
 type (
-	// Stream is a process that performs the work assigned to it using the
-	// set of Processors provided to it when constructed
+	// Stream is a process that performs the work assigned to it using the set
+	// of Processors provided to it when constructed
 	Stream interface {
 		// Start begins background processing of the Stream
 		Start() error
 
-		// Stop instructs the Stream to stop processing as soon as the
-		// current message has completed
+		// Stop instructs the Stream to stop processing as soon as the current
+		// message has completed
 		Stop() error
 
 		// IsRunning returns whether the Stream is processing messages in the
@@ -34,16 +34,17 @@ type (
 	// Stream. Examples would be node.SinkTo and node.Sink
 	Sink struct{}
 
-	// Stop is a special Error that instructs the stream to completely
-	// stop operating. This should only be used in exceptional cases
+	// Stop is a special Error that instructs the stream to completely stop
+	// operating. This should only be used in exceptional cases
 	Stop struct{}
 )
 
 // Error messages
 const (
-	ErrAlreadyStarted = "stream already running"
-	ErrAlreadyStopped = "stream already stopped"
-	ErrStopRequested  = "stream stop requested"
+	ErrAlreadyStarted    = "stream already running"
+	ErrAlreadyStopped    = "stream already stopped"
+	ErrStopRequested     = "stream stop requested"
+	ErrProcessorReturned = "processor returned before context closed"
 )
 
 func (Stop) Error() string {
@@ -55,7 +56,7 @@ func (p Processor[In, Out]) Start(c *context.Context[In, Out]) {
 	go func() {
 		p(c)
 		if !c.IsDone() {
-			log.Println("processor returned before context closed")
+			log.Println(ErrProcessorReturned)
 		}
 	}()
 }
