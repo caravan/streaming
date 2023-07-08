@@ -88,3 +88,37 @@ func TestContextWith(t *testing.T) {
 	as.NotEqual(c3.Out, c4.Out)
 	as.NotEqual(c3.In, c4.In)
 }
+
+func TestMonitorMessages(t *testing.T) {
+	as := assert.New(t)
+
+	done := make(chan context.Done)
+	monitor := make(chan context.Advice)
+	c1 := context.Make[any, any](done, monitor, nil, nil)
+
+	go func() {
+		c1.Advise(context.Stop{})
+		c1.Errorf("recoverable error")
+		c1.Fatalf("fatal error")
+	}()
+
+	go func() {
+		v1, ok := (<-monitor).(context.Stop)
+		as.NotNil(v1)
+		as.True(ok)
+
+		v2, ok := (<-monitor).(*context.Error)
+		as.NotNil(v2)
+		as.True(ok)
+		as.EqualError(v2, "recoverable error")
+
+		v3, ok := (<-monitor).(*context.Fatal)
+		as.NotNil(v3)
+		as.True(ok)
+		as.EqualError(v3, "fatal error")
+
+		close(done)
+	}()
+
+	<-done
+}

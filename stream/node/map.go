@@ -12,12 +12,12 @@ type Mapper[From, To any] func(From) To
 // Map constructs a processor that maps the messages it sees into new messages
 // using the provided function
 func Map[From, To any](fn Mapper[From, To]) stream.Processor[From, To] {
-	return func(c *context.Context[From, To]) error {
+	return func(c *context.Context[From, To]) {
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
-				return nil
+				return
 			} else if !c.ForwardResult(fn(msg)) {
-				return nil
+				return
 			}
 		}
 	}

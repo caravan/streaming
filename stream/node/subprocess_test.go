@@ -17,11 +17,10 @@ func TestSubprocessError(t *testing.T) {
 
 	s := node.Subprocess[any](
 		node.Forward[any],
-		func(c *context.Context[any, any]) error {
+		func(c *context.Context[any, any]) {
 			<-c.In
 			c.Errorf("explosion")
 			<-c.Done
-			return nil
 		},
 	)
 

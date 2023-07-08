@@ -18,11 +18,10 @@ type (
 		IsRunning() bool
 	}
 
-	// Processor is a function that processes part of a Stream topology. If an
-	// error is returned from a Processor, it is considered a fatal condition
-	// for the Stream, which will be immediately stopped. Recoverable errors
-	// can be sent to the context.Context's Monitor channel.
-	Processor[In, Out any] func(*context.Context[In, Out]) error
+	// Processor is a function that processes part of a Stream topology.
+	// Recoverable and fatal errors can be sent to the context.Context's
+	// Monitor channel.
+	Processor[In, Out any] func(*context.Context[In, Out])
 
 	// Source messages are provided to a Processor that is meant to generate
 	// messages from a source outside its current Stream. Examples would be
@@ -43,10 +42,7 @@ const (
 // Start begins the Processor in a new go routine, logging any abnormalities
 func (p Processor[In, Out]) Start(c *context.Context[In, Out]) {
 	go func() {
-		if err := p(c); err != nil {
-			c.Fatal(err)
-			return
-		}
+		p(c)
 		if !c.IsDone() {
 			c.Fatalf(ErrProcessorReturned)
 		}

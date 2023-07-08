@@ -24,11 +24,10 @@ func joinSum(l int, r int) int {
 }
 
 func makeJoinError(e error) stream.Processor[stream.Source, int] {
-	return func(c *context.Context[stream.Source, int]) error {
+	return func(c *context.Context[stream.Source, int]) {
 		<-c.In
 		c.Error(e)
 		<-c.Done
-		return nil
 	}
 }
 

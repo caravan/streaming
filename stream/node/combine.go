@@ -19,11 +19,10 @@ func Bind[In, Bound, Out any](
 	left stream.Processor[In, Bound],
 	right stream.Processor[Bound, Out],
 ) stream.Processor[In, Out] {
-	return func(c *context.Context[In, Out]) error {
+	return func(c *context.Context[In, Out]) {
 		h := make(chan Bound)
 		left.Start(context.WithOut(c, h))
 		right.Start(context.WithIn(c, h))
 		<-c.Done
-		return nil
 	}
 }

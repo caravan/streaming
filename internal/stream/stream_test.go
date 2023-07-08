@@ -39,31 +39,83 @@ func TestStreamStop(t *testing.T) {
 
 	s := makeGeneratingStream("hello").Start()
 	as.NotNil(s)
-
 	as.Nil(s.Stop())
 	as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
 }
 
 func TestStreamMonitorStop(t *testing.T) {
 	as := assert.New(t)
-	var r stream.Running
-	s := internal.Make[any](
+	var s stream.Running
+	s = internal.Make[any](
 		node.Generate(func() (any, bool) {
 			return "hello", true
 		}),
-		func(c *context.Context[any, any]) error {
-			as.True(r.IsRunning())
+		func(c *context.Context[any, any]) {
+			as.True(s.IsRunning())
 			c.Advise(context.Stop{})
-
-			return nil
 		},
-	)
-	r = s.Start()
-	as.NotNil(r)
+	).Start()
+
+	as.NotNil(s)
 	done := make(chan bool)
 	go func() {
-		time.Sleep(500 * time.Millisecond)
-		as.EqualError(r.Stop(), stream.ErrAlreadyStopped)
+		time.Sleep(50 * time.Millisecond)
+		as.EqualError(s.Stop(), stream.ErrAlreadyStopped)
+		done <- true
+	}()
+	<-done
+}
+
+func TestStreamRecoverableError(t *testing.T) {
+	as := assert.New(t)
+	var s stream.Running
+	s = internal.Make[any](
+		node.Generate(func() (any, bool) {
+			return "hello", true
+		}),
+		func(c *context.Context[any, any]) {
+			for {
+				select {
+				case <-c.Done:
+					return
+				case <-c.In:
+					as.True(s.IsRunning())
+					c.Errorf("recoverable")
+					time.Sleep(100 * time.Millisecond)
+				}
+			}
+		},
+	).Start()
+
+	as.NotNil(s)
+	done := make(chan bool)
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		as.True(s.IsRunning())
+		s.Stop()
+		done <- true
+	}()
+	<-done
+}
+
+func TestStreamFatalError(t *testing.T) {
+	as := assert.New(t)
+	var s stream.Running
+	s = internal.Make[any](
+		node.Generate(func() (any, bool) {
+			return "hello", true
+		}),
+		func(c *context.Context[any, any]) {
+			as.True(s.IsRunning())
+			c.Fatalf("boom")
+		},
+	).Start()
+
+	as.NotNil(s)
+	done := make(chan bool)
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		as.False(s.IsRunning())
 		done <- true
 	}()
 	<-done

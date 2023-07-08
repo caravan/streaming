@@ -6,7 +6,7 @@ import (
 )
 
 func SidechainTo[Msg any](ch chan<- Msg) stream.Processor[Msg, Msg] {
-	return func(c *context.Context[Msg, Msg]) error {
+	return func(c *context.Context[Msg, Msg]) {
 
 		forwardToChannel := func(msg Msg) bool {
 			select {
@@ -19,11 +19,11 @@ func SidechainTo[Msg any](ch chan<- Msg) stream.Processor[Msg, Msg] {
 
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
-				return nil
+				return
 			} else if !forwardToChannel(msg) {
-				return nil
+				return
 			} else if !c.ForwardResult(msg) {
-				return nil
+				return
 			}
 		}
 	}

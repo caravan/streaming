@@ -12,14 +12,14 @@ type ForEachFunc[Msg any] func(Msg)
 // ForEach constructs a processor that performs an action on the messages it
 // sees using the provided function, and then forwards the message
 func ForEach[Msg any](fn ForEachFunc[Msg]) stream.Processor[Msg, Msg] {
-	return func(c *context.Context[Msg, Msg]) error {
+	return func(c *context.Context[Msg, Msg]) {
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
-				return nil
+				return
 			} else {
 				fn(msg)
 				if !c.ForwardResult(msg) {
-					return nil
+					return
 				}
 			}
 		}

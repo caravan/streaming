@@ -11,7 +11,7 @@ import (
 func Split[In, Out any](
 	p ...stream.Processor[In, Out],
 ) stream.Processor[In, stream.Sink] {
-	return func(c *context.Context[In, stream.Sink]) error {
+	return func(c *context.Context[In, stream.Sink]) {
 		sink := make(chan Out)
 		Sink[Out]().Start(
 			context.With(c, sink, make(chan stream.Sink)),
@@ -46,9 +46,9 @@ func Split[In, Out any](
 
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
-				return nil
+				return
 			} else if !forwardInput(msg) {
-				return nil
+				return
 			}
 		}
 	}
