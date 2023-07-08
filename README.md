@@ -54,9 +54,7 @@ func main() {
 			},
 		),
 		node.TopicProducer(out),
-	)
-
-	_ = s.Start()
+	).Start()
 
 	done := make(chan struct{})
 
