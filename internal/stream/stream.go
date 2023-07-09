@@ -20,7 +20,8 @@ type (
 	Running[In, Out any] struct {
 		sync.Mutex
 		*Stream[In, Out]
-		done chan context.Done
+		monitor chan context.Advice
+		done    chan context.Done
 	}
 )
 
@@ -35,18 +36,29 @@ func Make[In, Out any](
 }
 
 // Start kicks off the background routine for this stream
-func (s *Stream[In, Out]) Start() stream.Running {
-	r := &Running[In, Out]{
-		Stream: s,
-		done:   make(chan context.Done),
-	}
-	r.startStream(
-		r.startMonitor(),
-	)
+func (s *Stream[_, _]) Start() stream.Running {
+	r := s.start()
+	r.startMonitoringWith(r.handleAdvice)
 	return r
 }
 
-func (r *Running[_, Out]) startStream(monitor chan context.Advice) {
+func (s *Stream[_, _]) StartWith(h stream.AdviceHandler) stream.Running {
+	r := s.start()
+	r.startMonitoringWith(h)
+	return r
+}
+
+func (s *Stream[In, Out]) start() *Running[In, Out] {
+	r := &Running[In, Out]{
+		Stream:  s,
+		monitor: make(chan context.Advice),
+		done:    make(chan context.Done),
+	}
+	r.startStream()
+	return r
+}
+
+func (r *Running[_, Out]) startStream() {
 	go func() {
 		in := make(chan stream.Source)
 		out := make(chan stream.Sink)
@@ -56,7 +68,7 @@ func (r *Running[_, Out]) startStream(monitor chan context.Advice) {
 			node.Sink[Out](),
 		)
 
-		loop.Start(context.Make(r.done, monitor, in, out))
+		loop.Start(context.Make(r.done, r.monitor, in, out))
 
 		for {
 			select {
@@ -68,22 +80,22 @@ func (r *Running[_, Out]) startStream(monitor chan context.Advice) {
 	}()
 }
 
-func (r *Running[_, _]) startMonitor() chan context.Advice {
-	monitor := make(chan context.Advice)
+func (r *Running[_, _]) startMonitoringWith(handle stream.AdviceHandler) {
 	go func() {
 		for {
 			select {
 			case <-r.done:
 				return
-			case a := <-monitor:
-				r.handleAdvice(a)
+			case a := <-r.monitor:
+				handle(a, func() {
+					r.handleAdvice(a, nil)
+				})
 			}
 		}
 	}()
-	return monitor
 }
 
-func (r *Running[_, _]) handleAdvice(a context.Advice) {
+func (r *Running[_, _]) handleAdvice(a context.Advice, _ func()) {
 	switch e := a.(type) {
 	case *context.Error:
 		log.Print(e.Error())

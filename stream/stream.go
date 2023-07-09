@@ -8,6 +8,11 @@ type (
 	Stream interface {
 		// Start begins background processing of the Stream
 		Start() Running
+
+		// StartWith begins background processing of the Stream, but gives the
+		// programmer first crack at the Advice being received on the Stream's
+		// monitor channel
+		StartWith(AdviceHandler) Running
 	}
 
 	Running interface {
@@ -17,6 +22,12 @@ type (
 		// IsRunning returns whether the Stream is processing messages
 		IsRunning() bool
 	}
+
+	// AdviceHandler is provided to Stream.StartWith so that the programmer may
+	// react to Advice messages being received by the Stream's monitor channel.
+	// Calling next() will ultimately invoke the default behavior for the
+	// received Advice. Not calling next() will short-circuit that behavior
+	AdviceHandler func(a context.Advice, next func())
 
 	// Processor is a function that processes part of a Stream topology.
 	// Recoverable and fatal errors can be sent to the context.Context's

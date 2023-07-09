@@ -77,7 +77,7 @@ func TestStatefulSubprocess(t *testing.T) {
 	inTopic := essentials.NewTopic[int]()
 	outTopic := essentials.NewTopic[int]()
 
-	s := internal.Make(
+	internal.Make(
 		node.TopicConsumer(inTopic),
 		node.Subprocess(
 			node.Reduce(func(l int, r int) int {
@@ -85,9 +85,7 @@ func TestStatefulSubprocess(t *testing.T) {
 			}),
 			node.TopicProducer(outTopic),
 		),
-	)
-
-	_ = s.Start()
+	).Start()
 
 	p := inTopic.NewProducer()
 	p.Send() <- 1

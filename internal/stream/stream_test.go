@@ -85,7 +85,12 @@ func TestStreamRecoverableError(t *testing.T) {
 				}
 			}
 		},
-	).Start()
+	).StartWith(func(a context.Advice, next func()) {
+		e, ok := a.(*context.Error)
+		as.True(ok)
+		as.EqualError(e, "recoverable")
+		next()
+	})
 
 	as.NotNil(s)
 	done := make(chan bool)
