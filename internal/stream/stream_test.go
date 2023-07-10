@@ -97,7 +97,7 @@ func TestStreamRecoverableError(t *testing.T) {
 	go func() {
 		time.Sleep(50 * time.Millisecond)
 		as.True(s.IsRunning())
-		s.Stop()
+		_ = s.Stop()
 		done <- true
 	}()
 	<-done

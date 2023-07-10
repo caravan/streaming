@@ -12,7 +12,42 @@ import (
 	internal "github.com/caravan/streaming/internal/stream"
 )
 
-func TestSubprocessError(t *testing.T) {
+func TestEmptySubprocess(t *testing.T) {
+	as := assert.New(t)
+
+	s := node.Subprocess[any]()
+	as.NotNil(s)
+
+	done := make(chan context.Done)
+	in := make(chan any)
+	out := make(chan any)
+
+	s.Start(context.Make(done, make(chan context.Advice), in, out))
+	in <- "hello"
+	as.Equal("hello", <-out)
+	close(done)
+}
+
+func TestSingleSubprocess(t *testing.T) {
+	as := assert.New(t)
+
+	double := node.Subprocess[int](func(c *context.Context[int, int]) {
+		c.Out <- (<-c.In) * 2
+	})
+
+	as.NotNil(double)
+
+	done := make(chan context.Done)
+	in := make(chan int)
+	out := make(chan int)
+
+	double.Start(context.Make(done, make(chan context.Advice), in, out))
+	in <- 8
+	as.Equal(16, <-out)
+	close(done)
+}
+
+func TestDoubleSubprocess(t *testing.T) {
 	as := assert.New(t)
 
 	s := node.Subprocess[any](
@@ -31,22 +66,6 @@ func TestSubprocessError(t *testing.T) {
 	s.Start(context.Make(done, monitor, in, make(chan any)))
 	in <- "anything"
 	as.EqualError((<-monitor).(error), "explosion")
-	close(done)
-}
-
-func TestEmptySubprocess(t *testing.T) {
-	as := assert.New(t)
-
-	s := node.Subprocess[any]()
-	as.NotNil(s)
-
-	done := make(chan context.Done)
-	in := make(chan any)
-	out := make(chan any)
-
-	s.Start(context.Make(done, make(chan context.Advice), in, out))
-	in <- "hello"
-	as.Equal("hello", <-out)
 	close(done)
 }
 
@@ -80,6 +99,7 @@ func TestStatefulSubprocess(t *testing.T) {
 	internal.Make(
 		node.TopicConsumer(inTopic),
 		node.Subprocess(
+			node.Forward[int],
 			node.Reduce(func(l int, r int) int {
 				return l + r
 			}),
