@@ -13,6 +13,5 @@ func Merge[Out any](
 		for _, proc := range p {
 			proc.Start(c)
 		}
-		<-c.Done
 	}
 }

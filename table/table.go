@@ -27,7 +27,7 @@ type (
 	Setter[Key comparable, Value any] func(Key, ...Value) error
 )
 
-// Errorf messages
+// Error messages
 const (
 	ErrKeyNotFound         = "key not found in table: %v"
 	ErrColumnNotFound      = "column not found in table: %s"

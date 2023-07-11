@@ -23,6 +23,5 @@ func Bind[In, Bound, Out any](
 		h := make(chan Bound)
 		left.Start(context.WithOut(c, h))
 		right.Start(context.WithIn(c, h))
-		<-c.Done
 	}
 }

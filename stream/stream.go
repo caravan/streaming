@@ -1,6 +1,8 @@
 package stream
 
-import "github.com/caravan/streaming/stream/context"
+import (
+	"github.com/caravan/streaming/stream/context"
+)
 
 type (
 	// Stream is a process that performs the work assigned to it using the set
@@ -44,18 +46,12 @@ type (
 	Sink struct{}
 )
 
-// Errorf messages
+// Error messages
 const (
-	ErrAlreadyStopped    = "stream already stopped"
-	ErrProcessorReturned = "processor returned before context closed"
+	ErrAlreadyStopped = "stream already stopped"
 )
 
 // Start begins the Processor in a new go routine, logging any abnormalities
 func (p Processor[In, Out]) Start(c *context.Context[In, Out]) {
-	go func() {
-		p(c)
-		if !c.IsDone() {
-			c.Fatalf(ErrProcessorReturned)
-		}
-	}()
+	go p(c)
 }
