@@ -4,10 +4,6 @@ sudo: false
 go:
   - 1.19.x
 
-env:
-  global:
-    - CARAVAN_DEBUG=1
-
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
@@ -19,7 +15,9 @@ install:
 
 script:
   - make test
-  - go test -coverprofile c.out ./...
+  - CARAVAN_DEBUG=0 go test -coverprofile c0.out ./...
+  - CARAVAN_DEBUG=1 go test -coverprofile c1.out ./...
+  - cat c0.out c1.out > c.out
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

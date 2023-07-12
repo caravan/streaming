@@ -1,6 +1,9 @@
 package stream
 
 import (
+	"time"
+
+	"github.com/caravan/essentials/debug"
 	"github.com/caravan/streaming/stream/context"
 )
 
@@ -48,10 +51,23 @@ type (
 
 // Error messages
 const (
+	ErrReturnedLate   = "processor returned late before context closed"
 	ErrAlreadyStopped = "stream already stopped"
 )
 
 // Start begins the Processor in a new go routine, logging any abnormalities
 func (p Processor[In, Out]) Start(c *context.Context[In, Out]) {
-	go p(c)
+	if !debug.IsEnabled() {
+		go p(c)
+		return
+	}
+
+	go func() {
+		start := time.Now().UnixNano() / int64(time.Millisecond)
+		p(c)
+		end := time.Now().UnixNano() / int64(time.Millisecond)
+		if end-start > 1 && !c.IsDone() {
+			c.Debugf(ErrReturnedLate)
+		}
+	}()
 }

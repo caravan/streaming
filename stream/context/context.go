@@ -1,6 +1,9 @@
 package context
 
-import "fmt"
+import (
+	"fmt"
+	"runtime/debug"
+)
 
 type (
 	Advice interface {
@@ -21,6 +24,11 @@ type (
 	// Stop is Advice that instructs the Stream to completely stop operating.
 	// This should only be used in exceptional cases.
 	Stop struct{}
+
+	Debug struct {
+		Message string
+		Stack   []byte
+	}
 
 	// Error is Advice that reports a recoverable error to the Stream.
 	Error struct{ error }
@@ -94,14 +102,19 @@ func (c *Context[In, Out]) Advise(a Advice) bool {
 	}
 }
 
+func (c *Context[_, _]) Debugf(format string, v ...any) bool {
+	return c.Advise(&Debug{
+		Message: fmt.Sprintf(format, v...),
+		Stack:   debug.Stack(),
+	})
+}
+
 func (c *Context[_, _]) Errorf(format string, v ...any) bool {
 	return c.Error(fmt.Errorf(format, v...))
 }
 
 func (c *Context[_, _]) Error(err error) bool {
-	return c.Advise(&Error{
-		error: err,
-	})
+	return c.Advise(&Error{err})
 }
 
 func (c *Context[_, _]) Fatalf(format string, v ...any) bool {
@@ -109,11 +122,10 @@ func (c *Context[_, _]) Fatalf(format string, v ...any) bool {
 }
 
 func (c *Context[_, _]) Fatal(err error) bool {
-	return c.Advise(&Fatal{
-		error: err,
-	})
+	return c.Advise(&Fatal{err})
 }
 
 func (Stop) advice()   {}
+func (*Debug) advice() {}
 func (*Error) advice() {}
 func (*Fatal) advice() {}

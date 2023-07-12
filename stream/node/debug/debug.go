@@ -1,6 +1,7 @@
 package debug
 
 import (
+	"github.com/caravan/essentials/debug"
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/context"
 )
@@ -19,6 +20,10 @@ const (
 func ProcessorReturnedEarly[In, Out any](
 	p stream.Processor[In, Out],
 ) stream.Processor[In, Out] {
+	if !debug.IsEnabled() {
+		return p
+	}
+
 	return func(c *context.Context[In, Out]) {
 		p(c)
 		if !c.IsDone() {
