@@ -16,6 +16,7 @@ install:
 script:
   - make test
   - CARAVAN_DEBUG=0 go test -coverprofile c0.out ./...
+  - go clean -testcache
   - CARAVAN_DEBUG=1 go test -coverprofile c1.out ./...
   - cat c0.out c1.out > c.out
 

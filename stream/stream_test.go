@@ -30,5 +30,12 @@ func TestProcessorStart(t *testing.T) {
 		a, ok := (<-monitor).(*context.Debug)
 		as.NotNil(a)
 		as.True(ok)
+	} else {
+		select {
+		case <-monitor:
+			as.Fail("should not have monitor advice")
+		default:
+			// all good
+		}
 	}
 }

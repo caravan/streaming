@@ -27,5 +27,12 @@ func TestProcessorReturnedEarly(t *testing.T) {
 			(<-monitor).(*context.Fatal),
 			debug.ErrProcessorReturnedEarly,
 		)
+	} else {
+		select {
+		case <-monitor:
+			as.Fail("should not have monitor advice")
+		default:
+			// all good
+		}
 	}
 }
