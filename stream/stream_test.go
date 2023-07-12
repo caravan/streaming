@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/caravan/essentials/debug"
-
 	"github.com/caravan/streaming/stream"
 	"github.com/caravan/streaming/stream/context"
 	"github.com/stretchr/testify/assert"
