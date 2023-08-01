@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/caravan/essentials v0.0.0-20230712092028-7614a3f76a11
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/tools v0.11.0
+	golang.org/x/tools v0.11.1
 	honnef.co/go/tools v0.4.3
 )
 
