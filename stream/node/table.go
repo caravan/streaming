@@ -8,8 +8,8 @@ import (
 
 // TableLookup performs a lookup on a table using the provided message. The Key
 // extracts a Key from this message and uses it to perform the lookup against
-// the Table. The ColumnSelector returned by the lookup is forwarded to the
-// next Processor
+// the Table. The Column returned by the lookup is forwarded to the next
+// Processor
 func TableLookup[Msg any, Key comparable, Value any](
 	t table.Table[Key, Value],
 	c table.ColumnName,
@@ -23,11 +23,7 @@ func TableLookup[Msg any, Key comparable, Value any](
 		for {
 			if msg, ok := c.FetchMessage(); !ok {
 				return
-			} else if k, e := k(msg); e != nil {
-				if !c.Error(e) {
-					return
-				}
-			} else if res, e := getColumn(k); e != nil {
+			} else if res, e := getColumn(k(msg)); e != nil {
 				if !c.Error(e) {
 					return
 				}

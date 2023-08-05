@@ -1,7 +1,6 @@
 package table_test
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -30,14 +29,14 @@ func TestUpdater(t *testing.T) {
 	as.Nil(err)
 
 	updater, err := internal.MakeUpdater(tbl,
-		func(e *tableRow) (string, error) {
-			return e.key, nil
+		func(e *tableRow) string {
+			return e.key
 		},
-		column.Make("name", func(r *tableRow) (any, error) {
-			return r.name, nil
+		column.Make("name", func(r *tableRow) any {
+			return r.name
 		}),
-		column.Make("age", func(r *tableRow) (any, error) {
-			return r.age, nil
+		column.Make("age", func(r *tableRow) any {
+			return r.age
 		}),
 	)
 	as.NotNil(updater)
@@ -80,70 +79,4 @@ func TestUpdater(t *testing.T) {
 	res, err = sel(missing)
 	as.Nil(res)
 	as.EqualError(err, fmt.Sprintf(table.ErrKeyNotFound, missing))
-}
-
-func TestBadUpdater(t *testing.T) {
-	as := assert.New(t)
-
-	emptyTable, err := internal.Make[string, any]()
-	as.NotNil(emptyTable)
-	as.Nil(err)
-
-	updater, err := internal.MakeUpdater[*tableRow, string, any](emptyTable,
-		func(r *tableRow) (string, error) {
-			if r == nil || r.key == "" {
-				return "", errors.New("key-error")
-			}
-			return r.key, nil
-		},
-		column.Make("explode", func(e *tableRow) (any, error) {
-			return "", errors.New("column-error")
-		}),
-	)
-	as.Nil(updater)
-	as.Errorf(err, table.ErrColumnNotFound, "explode")
-}
-
-func TestBadSelectors(t *testing.T) {
-	as := assert.New(t)
-
-	tbl, err := internal.Make[string, any]("explode")
-	as.NotNil(tbl)
-	as.Nil(err)
-
-	updater, _ := internal.MakeUpdater[*tableRow, string, any](tbl,
-		func(r *tableRow) (string, error) {
-			if r == nil || r.key == "" {
-				return "", errors.New("key-error")
-			}
-			return r.key, nil
-		},
-		column.Make("explode", func(e *tableRow) (any, error) {
-			return "", errors.New("column-error")
-		}),
-	)
-
-	err = updater.Update(nil)
-	as.EqualError(err, "key-error")
-
-	keySel := updater.Key()
-	res1, err := keySel(nil)
-	as.Equal("", res1)
-	as.EqualError(err, "key-error")
-
-	cols1, err := tbl.Getter("explode")
-	as.Nil(err)
-	as.NotNil(cols1)
-
-	found := "found"
-	err = updater.Update(&tableRow{
-		key: found,
-	})
-	as.EqualError(err, "column-error")
-
-	cols2 := updater.Columns()
-	as.NotNil(cols2)
-	res3, err := cols2[0].Select(nil)
-	as.Equal("", res3)
-	as.EqualError(err, "column-error")
 }

@@ -1,7 +1,6 @@
 package node_test
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -26,17 +25,17 @@ func makeTestTable() (
 	tbl, _ := streaming.NewTable[string, string]("id", "name", "value")
 
 	updater, _ := streaming.NewTableUpdater(tbl,
-		func(r *row) (string, error) {
-			return r.id, nil
+		func(r *row) string {
+			return r.id
 		},
-		column.Make("id", func(r *row) (string, error) {
-			return r.id, nil
+		column.Make("id", func(r *row) string {
+			return r.id
 		}),
-		column.Make("name", func(r *row) (string, error) {
-			return r.name, nil
+		column.Make("name", func(r *row) string {
+			return r.name
 		}),
-		column.Make("value", func(r *row) (string, error) {
-			return r.value, nil
+		column.Make("value", func(r *row) string {
+			return r.value
 		}),
 	)
 
@@ -50,8 +49,8 @@ func TestTableUpdater(t *testing.T) {
 
 	updater := node.TableUpdater(u)
 	lookup, _ := node.TableLookup(tbl, "value",
-		func(r *row) (string, error) {
-			return r.id, nil
+		func(r *row) string {
+			return r.id
 		},
 	)
 
@@ -83,8 +82,8 @@ func TestTableLookup(t *testing.T) {
 	as.Nil(err)
 
 	lookup, err := node.TableLookup(tbl, "value",
-		func(k string) (string, error) {
-			return k, nil
+		func(k string) string {
+			return k
 		},
 	)
 	as.NotNil(lookup)
@@ -105,8 +104,8 @@ func TestLookupCreateError(t *testing.T) {
 
 	tbl, _ := streaming.NewTable[string, any]("not-missing")
 	lookup, err := node.TableLookup(tbl, "missing",
-		func(_ any) (string, error) {
-			return "", nil
+		func(_ any) string {
+			return ""
 		},
 	)
 	as.Nil(lookup)
@@ -120,11 +119,8 @@ func TestLookupProcessError(t *testing.T) {
 	tbl, _ := streaming.NewTable[string, any]("*")
 
 	lookup, e := node.TableLookup(tbl, "*",
-		func(e any) (string, error) {
-			if err, ok := e.(error); ok {
-				return "", err
-			}
-			return theKey, nil
+		func(e any) string {
+			return theKey
 		},
 	)
 
@@ -136,9 +132,6 @@ func TestLookupProcessError(t *testing.T) {
 	monitor := make(chan context.Advice)
 
 	lookup.Start(context.Make(done, monitor, in, make(chan any)))
-
-	in <- errors.New("key error")
-	as.EqualError((<-monitor).(error), "key error")
 
 	in <- "missing"
 	as.EqualError(

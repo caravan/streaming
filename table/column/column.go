@@ -3,17 +3,17 @@ package column
 import "github.com/caravan/streaming/table"
 
 type column[Msg, Value any] struct {
-	name     table.ColumnName
-	selector table.ValueSelector[Msg, Value]
+	name  table.ColumnName
+	value table.ValueSelector[Msg, Value]
 }
 
-// Make instantiates a new ColumnSelector instance
+// Make instantiates a new Column instance
 func Make[Msg, Value any](
-	n table.ColumnName, s table.ValueSelector[Msg, Value],
-) table.ColumnSelector[Msg, Value] {
+	n table.ColumnName, v table.ValueSelector[Msg, Value],
+) table.Column[Msg, Value] {
 	return &column[Msg, Value]{
-		name:     n,
-		selector: s,
+		name:  n,
+		value: v,
 	}
 }
 
@@ -21,6 +21,6 @@ func (c *column[_, _]) Name() table.ColumnName {
 	return c.name
 }
 
-func (c *column[Msg, Value]) Select(msg Msg) (Value, error) {
-	return c.selector(msg)
+func (c *column[Msg, Value]) Select(m Msg) Value {
+	return c.value(m)
 }

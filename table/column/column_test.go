@@ -11,12 +11,11 @@ import (
 func TestColumn(t *testing.T) {
 	as := assert.New(t)
 
-	c := column.Make[any, string]("some-col", func(_ any) (string, error) {
-		return "hello", nil
+	c := column.Make[any, string]("some-col", func(_ any) string {
+		return "hello"
 	})
 
 	as.Equal(table.ColumnName("some-col"), c.Name())
-	res, err := c.Select("anything")
+	res := c.Select("anything")
 	as.Equal("hello", res)
-	as.Nil(err)
 }
