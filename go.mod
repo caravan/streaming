@@ -6,7 +6,7 @@ require (
 	github.com/caravan/essentials v0.0.0-20230712092028-7614a3f76a11
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/tools v0.12.0
-	honnef.co/go/tools v0.4.3
+	honnef.co/go/tools v0.4.5
 )
 
 require (
